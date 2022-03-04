@@ -40,7 +40,7 @@ class CreditsState extends MusicBeatState
 		DiscordClient.changePresence("In the Menus", null);
 		#end
 
-		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
+		bg = new FlxSprite().loadGraphic(Paths.image('briMenuDesat'));
 		add(bg);
 		bg.screenCenter();
 		
@@ -84,7 +84,7 @@ class CreditsState extends MusicBeatState
 			['Link', 'link', 'Main Programmer', 'https://www.pictureofhotdog.com/about', 'F73838'],
 			['Kevin', 'kev', 'Main Artist/Animator and Composer', 'https://twitter.com/koolaid', '4494E6'],
 			['celestialgaze', 'cel', 'Moral Support and Programming Aid', 'https://www.youtube.com/watch?v=ksFHisI1ICE', 'C549DB'],
-			['Sushishimi', 'sushi', 'Art and Design Aid', '', '6475F3'],
+			['Sushishimi', 'sushi', 'Art and Design Aid', 'https://tenor.com/view/sushishimi-welcome-to-sushi-city-welcome-to-sushi-town-sushi-town-sushi-city-gif-24673329', '6475F3'],
 			[''],
 			['Psych Engine Team'],
 			['Shadow Mario',		'shadowmario',		'Main Programmer of Psych Engine',						'https://twitter.com/Shadow_Mario_',	'444444'],
