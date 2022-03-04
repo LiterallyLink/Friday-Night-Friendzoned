@@ -125,6 +125,7 @@ class WeekData {
 		#end
 
 		var sexList:Array<String> = CoolUtil.coolTextFile(Paths.getPreloadPath('weeks/weekList.txt'));
+		var noSexList:Array<String> = CoolUtil.coolTextFile(Paths.getPreloadPath('weeks/friendZonedWeekList.txt'));
 		for (i in 0...sexList.length) {
 			for (j in 0...directories.length) {
 				var fileToCheck:String = directories[j] + 'weeks/' + sexList[i] + '.json';
