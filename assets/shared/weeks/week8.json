@@ -1,32 +1,8 @@
 {
 	"songs": [
-		[
-			"Neopaliton",
-			"tankman",
-			[
-				246,
-				182,
-				4
-			]
-		],
-		[
-			"Peppermint",
-			"tankman",
-			[
-				246,
-				182,
-				4
-			]
-		],
-		[
-			"Sugarrush",
-			"tankman",
-			[
-				246,
-				182,
-				4
-			]
-		]
+		["Neopaliton", "tankman", [246, 182, 4]],
+		["Peppermint", "tankman", [246, 182, 4]],
+		["Sugarrush","tankman", [246, 182, 4]]
 	],
 	"hideFreeplay": false,
 	"weekBackground": "tank",
