@@ -93,6 +93,7 @@ class StoryMenuState extends MusicBeatState
 			{
 				loadedWeeks.push(weekFile);
 				WeekData.setDirectoryFromWeek(weekFile);
+				trace(WeekData.weeksList);
 				var weekThing:MenuItem = new MenuItem(0, bgSprite.y + 396, WeekData.weeksList[i]);
 				weekThing.y += ((weekThing.height + 20) * num);
 				weekThing.targetY = num;
@@ -320,8 +321,15 @@ class StoryMenuState extends MusicBeatState
 			}
 
 			new FlxTimer().start(1, function(tmr:FlxTimer)
-			{
-				LoadingState.loadAndSwitchState(new PlayState(), true);
+			{	
+				trace(curWeek);
+
+				if (curWeek == 1) {
+					LoadingState.loadAndSwitchState(new DSStartupState(), true);
+				} else {
+					LoadingState.loadAndSwitchState(new PlayState(), true);
+				}
+				// LoadingState.loadAndSwitchState(new DSPauseSubState(), true);
 				FreeplayState.destroyFreeplayVocals();
 			});
 			

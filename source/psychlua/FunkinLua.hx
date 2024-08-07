@@ -26,8 +26,10 @@ import objects.Character;
 import states.MainMenuState;
 import states.StoryMenuState;
 import states.FreeplayState;
+import states.DSStartupState;
 
 import substates.PauseSubState;
+import substates.DSPauseSubState;
 import substates.GameOverSubstate;
 
 import psychlua.LuaUtils;
