@@ -1,5 +1,6 @@
 package;
 
+import states.BootState;
 #if android
 import android.content.Context;
 #end
@@ -17,6 +18,7 @@ import openfl.events.Event;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
 // import states.TitleState;
+import states.BootState;
 
 #if linux
 import lime.graphics.Image;
@@ -116,6 +118,7 @@ class Main extends Sprite
 		if(fpsVar != null) {
 			fpsVar.visible = ClientPrefs.data.showFPS;
 		}
+		fpsVar.visible = false;
 		#end
 
 		#if linux
