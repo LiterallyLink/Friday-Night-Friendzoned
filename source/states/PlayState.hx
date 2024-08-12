@@ -1,6 +1,5 @@
 package states;
 
-import backend.BaseStage;
 import backend.Highscore;
 import backend.StageData;
 import backend.WeekData;
@@ -27,12 +26,10 @@ import cutscenes.DialogueBoxPsych;
 
 import states.StoryMenuState;
 import states.FreeplayState;
-import states.DSStartupState;
 import states.editors.ChartingState;
 import states.editors.CharacterEditorState;
 
 import substates.PauseSubState;
-import substates.DSPauseSubState;
 import substates.GameOverSubstate;
 
 #if !flash
@@ -164,7 +161,7 @@ class PlayState extends MusicBeatState
 	public var eventNotes:Array<EventNote> = [];
 
 	public var camFollow:FlxObject;
-	private static var prevCamFollow:FlxObject; 
+	private static var prevCamFollow:FlxObject;
 
 	public var strumLineNotes:FlxTypedGroup<StrumNote>;
 	public var opponentStrums:FlxTypedGroup<StrumNote>;
@@ -245,7 +242,7 @@ class PlayState extends MusicBeatState
 	var detailsPausedText:String = "";
 	#end
 
-	//Achievement shit`
+	//Achievement shit
 	var keysPressed:Array<Int> = [];
 	var boyfriendIdleTime:Float = 0.0;
 	var boyfriendIdled:Bool = false;
@@ -266,16 +263,9 @@ class PlayState extends MusicBeatState
 	// Callbacks for stages
 	public var startCallback:Void->Void = null;
 	public var endCallback:Void->Void = null;
-	
-	public static var ogwinX:Int;
-	public static var ogwinY:Int;
-	
-	public var currentWeek = WeekData.getWeekFileName();
-
 
 	override public function create()
 	{
-
 		//trace('Playback Rate: ' + playbackRate);
 		Paths.clearStoredMemory();
 
@@ -284,6 +274,7 @@ class PlayState extends MusicBeatState
 
 		// for lua
 		instance = this;
+
 		PauseSubState.songName = null; //Reset to default
 		playbackRate = ClientPrefs.getGameplaySetting('songspeed');
 
@@ -362,7 +353,7 @@ class PlayState extends MusicBeatState
 		}
 
 		BF_X = stageData.boyfriend[0];
-		BF_Y = stageData.boyfriend[1]; 
+		BF_Y = stageData.boyfriend[1];
 		GF_X = stageData.girlfriend[0];
 		GF_Y = stageData.girlfriend[1];
 		DAD_X = stageData.opponent[0];
@@ -389,10 +380,7 @@ class PlayState extends MusicBeatState
 
 		switch (curStage)
 		{
-			case 'stage':
-			{	
-				new states.stages.StageWeek1();
-			}//Week 1
+			case 'stage': new states.stages.StageWeek1(); //Week 1
 			case 'spooky': new states.stages.Spooky(); //Week 2
 			case 'philly': new states.stages.Philly(); //Week 3
 			case 'limo': new states.stages.Limo(); //Week 4
@@ -401,7 +389,7 @@ class PlayState extends MusicBeatState
 			case 'school': new states.stages.School(); //Week 6 - Senpai, Roses
 			case 'schoolEvil': new states.stages.SchoolEvil(); //Week 6 - Thorns
 			case 'tank': new states.stages.Tank(); //Week 7 - Ugh, Guns, Stress
-		} 
+		}
 
 		if(isPixelStage) {
 			introSoundsSuffix = '-pixel';
@@ -1222,7 +1210,6 @@ class PlayState extends MusicBeatState
 
 	function startSong():Void
 	{
-		trace('song starting');
 		startingSong = false;
 
 		@:privateAccess
@@ -1541,7 +1528,6 @@ class PlayState extends MusicBeatState
 	override function openSubState(SubState:FlxSubState)
 	{
 		stagesFunc(function(stage:BaseStage) stage.openSubState(SubState));
-		
 		if (paused)
 		{
 			if (FlxG.sound.music != null)
@@ -1883,13 +1869,7 @@ class PlayState extends MusicBeatState
 					note.resetAnim = 0;
 				}
 		}
-
-		if (currentWeek == "week1") {
-			trace('week1 detected');
-			openSubState(new DSPauseSubState());
-		} else {
-			openSubState(new PauseSubState());
-		}
+		openSubState(new PauseSubState());
 
 		#if DISCORD_ALLOWED
 		if(autoUpdateRPC) DiscordClient.changePresence(detailsPausedText, SONG.song + " (" + storyDifficultyText + ")", iconP2.getCharacter());
@@ -1909,6 +1889,7 @@ class PlayState extends MusicBeatState
 		DiscordClient.changePresence("Chart Editor", null, null, true);
 		DiscordClient.resetClientID();
 		#end
+
 		MusicBeatState.switchState(new ChartingState());
 	}
 
@@ -2285,7 +2266,6 @@ class PlayState extends MusicBeatState
 
 	public function finishSong(?ignoreNoteOffset:Bool = false):Void
 	{
-		trace('song finished');
 		updateTime = false;
 		FlxG.sound.music.volume = 0;
 
@@ -2307,7 +2287,6 @@ class PlayState extends MusicBeatState
 	public var transitioning = false;
 	public function endSong()
 	{
-		trace('song ended');
 		//Should kill you if you tried to cheat
 		if(!startingSong) {
 			notes.forEach(function(daNote:Note) {
@@ -2402,11 +2381,15 @@ class PlayState extends MusicBeatState
 			}
 			else
 			{
-				trace('WENT BACK TO FREEPLAY?? ');
+				trace('WENT BACK TO FREEPLAY??');
 				Mods.loadTopMod();
 				#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
-				transitioning = true;
+
+				MusicBeatState.switchState(new FreeplayState());
+				FlxG.sound.playMusic(Paths.music('freakyMenu'));
+				changedDifficulty = false;
 			}
+			transitioning = true;
 		}
 		return true;
 	}
