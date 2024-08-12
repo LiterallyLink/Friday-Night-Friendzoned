@@ -1,5 +1,6 @@
 package;
 
+import states.TitleState;
 import states.BootState;
 #if android
 import android.content.Context;
@@ -17,7 +18,7 @@ import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
-// import states.TitleState;
+import states.TitleState;
 import states.BootState;
 
 #if linux
@@ -43,7 +44,7 @@ class Main extends Sprite
 	public var game = {
 		width: 1280, // WINDOW width
 		height: 720, // WINDOW height
-		initialState: BootState, // initial game state
+		initialState: TitleState, // initial game state
 		zoom: -1.0, // game state bounds
 		framerate: 60, // default framerate
 		skipSplash: true, // if the default flixel splash screen should be skipped
@@ -118,7 +119,7 @@ class Main extends Sprite
 		if(fpsVar != null) {
 			fpsVar.visible = ClientPrefs.data.showFPS;
 		}
-		fpsVar.visible = false;
+		// fpsVar.visible = false;
 		#end
 
 		#if linux
