@@ -323,13 +323,13 @@ class StoryMenuState extends MusicBeatState
 			new FlxTimer().start(1, function(tmr:FlxTimer)
 			{	
 				trace(curWeek);
-
+				LoadingState.loadAndSwitchState(new PlayState(), true);
+				/*
 				if (curWeek == 1) {
-					LoadingState.loadAndSwitchState(new DSStartupState(), true);
-				} else {
 					LoadingState.loadAndSwitchState(new PlayState(), true);
+					// LoadingState.loadAndSwitchState(new DSStartupState(), true);
 				}
-				// LoadingState.loadAndSwitchState(new DSPauseSubState(), true);
+				*/
 				FreeplayState.destroyFreeplayVocals();
 			});
 			
