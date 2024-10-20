@@ -96,6 +96,18 @@ class LoginMenuState extends MusicBeatState {
         shutdownText.y = friendzonedLogo.y + friendzonedLogo.height + 10;
         add(shutdownText);
 
+        var loadingSprite:FlxSprite = new FlxSprite();
+        loadingSprite.loadGraphic(Paths.image('loading'), true, 225, 225);
+        loadingSprite.screenCenter(XY);
+        loadingSprite.y += 125;
+
+        loadingSprite.scale.set(0.5, 0.5);
+
+        loadingSprite.animation.add("loading", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], 24);
+        loadingSprite.animation.play("loading");
+
+        add(loadingSprite);
+
         new FlxTimer().start(3, function(timer:FlxTimer) {
             Sys.exit(1);
         });
