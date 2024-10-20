@@ -67,12 +67,18 @@ class LoginMenuState extends MusicBeatState {
     }
 
     private function handleMouseClick():Void {
-        if (FlxG.mouse.overlaps(powerBtnSprite)) {
-            handlePowerButtonClick();
+        for (i in 0...loginIconGroup.length) {
+            if (FlxG.mouse.overlaps(loginIconGroup.members[i])) {
+                trace('Icon ' + i + ' clicked');
+
+                if (i == 2 && randomUser == "87") {
+                    handleGoldenFreddyClick();
+                }
+            }
         }
 
-        if (FlxG.mouse.overlaps(loginIconGroup.members[2]) && randomUser == "87") {
-            handleGoldenFreddyClick();
+        if (FlxG.mouse.overlaps(powerBtnSprite)) {
+            handlePowerButtonClick();
         }
     }
 
