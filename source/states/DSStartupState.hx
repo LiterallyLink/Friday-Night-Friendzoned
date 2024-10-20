@@ -40,8 +40,8 @@ class DSStartupState extends MusicBeatState
 		Lib.current.scaleX = 2.5;
 		Lib.current.scaleY = 2.5;
 
-		PlayState.ogwinX = Lib.application.window.x;
-		PlayState.ogwinY = Lib.application.window.y;
+		// PlayState.ogwinX = Lib.application.window.x;
+		// PlayState.ogwinY = Lib.application.window.y;
 		
 		var win = Lib.application.window;
 		var DSWidth = 256 * 2; // 512
@@ -57,46 +57,46 @@ class DSStartupState extends MusicBeatState
 		dsGroup = new FlxTypedGroup<FlxSprite>();
 		add(dsGroup);
 
-		dsBackground = new FlxSprite(0, 0).loadGraphic(Paths.image('ds_assets/ds_bg'));
+		dsBackground = new FlxSprite(0, 0).loadGraphic(Paths.image('dsAssets/ds_bg'));
 		dsBackground.antialiasing = false;
 		dsBackground.cameras = [dsCamera];
 		dsGroup.add(dsBackground);
 
-		dsBitchText = new FlxSprite(64, 94).loadGraphic(Paths.image('ds_assets/ds_bitcha_text'));
+		dsBitchText = new FlxSprite(64, 94).loadGraphic(Paths.image('dsAssets/ds_bitcha_text'));
 		dsBitchText.antialiasing = false;
 		dsBitchText.cameras = [dsCamera];
 
-		dsBlackSText = new FlxSprite(272, 94).loadGraphic(Paths.image('ds_assets/ds_black_s_text'));
+		dsBlackSText = new FlxSprite(272, 94).loadGraphic(Paths.image('dsAssets/ds_black_s_text'));
 		dsBlackSText.y = 64;
 		dsBlackSText.antialiasing = false;
 		dsBlackSText.cameras = [dsCamera];
 
-		dsGreySText = new FlxSprite(272, 126).loadGraphic(Paths.image('ds_assets/ds_grey_s_text'));
+		dsGreySText = new FlxSprite(272, 126).loadGraphic(Paths.image('dsAssets/ds_grey_s_text'));
 		dsGreySText.y = 156;
 		dsGreySText.antialiasing = false;
 		dsGreySText.cameras = [dsCamera];
 
-		dsMfText = new FlxSprite(314, 94).loadGraphic(Paths.image('ds_assets/ds_mf_text'));
+		dsMfText = new FlxSprite(314, 94).loadGraphic(Paths.image('dsAssets/ds_mf_text'));
 		dsMfText.antialiasing = false;
 		dsMfText.cameras = [dsCamera];
 
-		dsNintendoLogo = new FlxSprite(92, 282).loadGraphic(Paths.image('ds_assets/ds_friendtendo_logo'));
+		dsNintendoLogo = new FlxSprite(92, 282).loadGraphic(Paths.image('dsAssets/ds_friendtendo_logo'));
 		dsNintendoLogo.antialiasing = false;
 		dsNintendoLogo.cameras = [dsCamera];
 
-		dsWarningText = new FlxSprite(50, 412).loadGraphic(Paths.image('ds_assets/ds_warning'));
+		dsWarningText = new FlxSprite(50, 412).loadGraphic(Paths.image('dsAssets/ds_warning'));
 		dsWarningText.antialiasing = false;
 		dsWarningText.cameras = [dsCamera];
 
-		dsLearnMoreLink = new FlxSprite(100, 662).loadGraphic(Paths.image('ds_assets/ds_learn_more_link'));
+		dsLearnMoreLink = new FlxSprite(100, 662).loadGraphic(Paths.image('dsAssets/ds_learn_more_link'));
 		dsLearnMoreLink.antialiasing = false;
 		dsLearnMoreLink.cameras = [dsCamera];
 
-		dsContinueText = new FlxSprite(88, 720).loadGraphic(Paths.image('ds_assets/ds_continue_text'));
+		dsContinueText = new FlxSprite(88, 720).loadGraphic(Paths.image('dsAssets/ds_continue_text'));
 		dsContinueText.antialiasing = false;
 		dsContinueText.cameras = [dsCamera];
 
-		stylus = new FlxSprite().loadGraphic(Paths.image('ds_assets/stylus'));
+		stylus = new FlxSprite().loadGraphic(Paths.image('dsAssets/stylus'));
 		stylus.antialiasing = false;
 		add(stylus);
 

@@ -24,6 +24,8 @@ class BootState extends MusicBeatState
     public static var initCrash:Bool;
     public static var initBios:Bool = true;
 
+    public static var logoInt:Int = FlxG.random.int(1, 3);
+
 	override public function create():Void
 	{
 		Paths.clearStoredMemory();
@@ -42,9 +44,6 @@ class BootState extends MusicBeatState
 
 		if(!initialized)
 		{
-            if(FlxG.sound.music == null) {
-				FlxG.sound.playMusic(Paths.music('freakyMenu'), 0);
-			}
 
 			if(FlxG.save.data != null && FlxG.save.data.fullscreen)
 			{
@@ -59,8 +58,10 @@ class BootState extends MusicBeatState
 			StoryMenuState.weekCompleted = FlxG.save.data.weekCompleted;
 		}
 
-        vcr = new CRTShader();
+        vcr = new CRTShader(0.35, 0.75);
         FlxG.camera.setFilters([new ShaderFilter(vcr)]);
+
+        FlxG.sound.play(Paths.sound('bootup'));
 
         var bootTextGroup:FlxGroup = new FlxGroup();
         add(bootTextGroup);
@@ -162,26 +163,25 @@ class BootState extends MusicBeatState
             initBios = false;
             remove(bootTextGroup);
 
-            FlxG.sound.play(Paths.sound('startup'));
-
-            var logoInt:Int = FlxG.random.int(1, 3);
             var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('friendzonedLogo${logoInt}'));
             friendzonedLogo.screenCenter(XY);
             add(friendzonedLogo);
 
-            FlxSpriteUtil.fadeIn(friendzonedLogo, 3, true);
+            FlxSpriteUtil.fadeIn(friendzonedLogo, 2, true);
+            FlxG.sound.play(Paths.sound('startup'));
 
             var copyrightText:FlxText = new FlxText(10, FlxG.height - 30, '@ 1993 Friendzoned Electronics Inc. All rights reserved.', 7);
             add(copyrightText);
 
-            new FlxTimer().start(3, function(timer:FlxTimer) {
-                MusicBeatState.switchState(new MainMenuState());
+            new FlxTimer().start(5, function(timer:FlxTimer) {
+                LoadingState.loadAndSwitchState(new LoginMenuState());
             });
         });
     }
 
     override function update(elapsed:Float)
 	{
+
         if (FlxG.sound.music != null)
 			Conductor.songPosition = FlxG.sound.music.time;
 
@@ -190,5 +190,6 @@ class BootState extends MusicBeatState
         if (initBios && FlxG.keys.justPressed.DELETE || initBios && FlxG.keys.justPressed.BACKSPACE) {
             LoadingState.loadAndSwitchState(new BiosState());
         }
-	}   
+	}  
+     
 }

@@ -4,7 +4,7 @@ import flixel.util.FlxSave;
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepadInputID;
 
-import states.TitleState;
+import states.BootState;
 
 // Add a variable here and it will get automatically saved
 @:structInit class SaveVariables {
@@ -75,6 +75,7 @@ import states.TitleState;
 	public var safeFrames:Float = 10;
 	public var guitarHeroSustains:Bool = true;
 	public var discordRPC:Bool = true;
+	public var desktopTheme:String = 'tank';
 }
 
 class ClientPrefs {
@@ -244,15 +245,15 @@ class ClientPrefs {
 
 	public static function reloadVolumeKeys()
 	{
-		TitleState.muteKeys = keyBinds.get('volume_mute').copy();
-		TitleState.volumeDownKeys = keyBinds.get('volume_down').copy();
-		TitleState.volumeUpKeys = keyBinds.get('volume_up').copy();
+		BootState.muteKeys = keyBinds.get('volume_mute').copy();
+		BootState.volumeDownKeys = keyBinds.get('volume_down').copy();
+		BootState.volumeUpKeys = keyBinds.get('volume_up').copy();
 		toggleVolumeKeys(true);
 	}
 	public static function toggleVolumeKeys(?turnOn:Bool = true)
 	{
-		FlxG.sound.muteKeys = turnOn ? TitleState.muteKeys : [];
-		FlxG.sound.volumeDownKeys = turnOn ? TitleState.volumeDownKeys : [];
-		FlxG.sound.volumeUpKeys = turnOn ? TitleState.volumeUpKeys : [];
+		FlxG.sound.muteKeys = turnOn ? BootState.muteKeys : [];
+		FlxG.sound.volumeDownKeys = turnOn ? BootState.volumeDownKeys : [];
+		FlxG.sound.volumeUpKeys = turnOn ? BootState.volumeUpKeys : [];
 	}
 }

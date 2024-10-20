@@ -2,45 +2,50 @@ package states;
 
 import flixel.FlxG;
 
+import shaders.CRTShader;
+import flixel.system.FlxAssets.FlxShader;
+import openfl.filters.ShaderFilter;
+
 class BiosState extends MusicBeatState
 {
+	public var vcr:CRTShader;
 
 	override public function create():Void
 	{
+		vcr = new CRTShader(0.35, 0.75);
+		FlxG.camera.setFilters([new ShaderFilter(vcr)]);
+
         FlxG.mouse.visible = true;
+		FlxG.mouse.useSystemCursor = true;
 
-        var funkinOSLogo:FlxText = new FlxText(10, 10, "
-          ___          _   _      ___  ___ 
-         | __|  _ _ _ | |_(_)_ _ / _ \\/ __|
-         | _| || | ' \\| / / | ' \\ (_) \\__ \\
-         |_| \\_,_|_||_|_\\_\\_|_||_\\___/|___/
-                                   ");
-        add(funkinOSLogo);
+		var friendzonedOSLogo:FlxSprite = new FlxSprite(10, 10).loadGraphic(Paths.image('friendzonedOSLogo'));
+		add(friendzonedOSLogo);
     
-        var biosText:FlxText = new FlxText(10, 80, "You're seeing this screen because you interrupted\nthe boot sequence or something went wrong\nduring scripts execution.", 8);
-        biosText.setFormat(null, 8, 0xFFC9D872);
-        // add(biosText);
+        var biosText:FlxText = new FlxText(10, 145, "DA FUCK? You just crashed the party...");
+        biosText.setFormat(null, 15, FlxColor.YELLOW);
+        add(biosText);
 
-        var downgradeText:FlxText = new FlxText(10, 120, "> Downgrade to Funkin93 v1", 8);
-        // add(downgradeText);
-        var downgradeExplanationText:FlxText = new FlxText(10, 130, "Less apps and no filesystem\nbut better support for old browsers", 8);
-        downgradeExplanationText.setFormat(null, 8, 0xFFC9D872);
-       //  add(downgradeExplanationText);
+        var downgradeText:FlxText = new FlxText(10, 180, "> Roll it back to FriendzonedOS v1");
+		downgradeText.setFormat(null, 10, FlxColor.YELLOW);
+        add(downgradeText);
+        var downgradeExplanationText:FlxText = new FlxText(10, 195, "Fewer beats, no file groove,\nbut it's chill with retro browsers.", 8);
+		add(downgradeExplanationText);
 
-        var reinstallText:FlxText = new FlxText(10, 160, "> Reinstall to Funkin93 v2", 8);
-       // add(reinstallText);
-        var reinstallExplanationText:FlxText = new FlxText(10, 170, "You will loose all your saved data\nbut can repair broken boot", 8);
-        reinstallExplanationText.setFormat(null, 8, 0xFFC9D872);
-       // add(reinstallExplanationText);
+        var reinstallText:FlxText = new FlxText(10, 235, "> Reinstall FriendzonedOS v2");
+		reinstallText.setFormat(null, 10, FlxColor.YELLOW);
+        add(reinstallText);
+        var reinstallExplanationText:FlxText = new FlxText(10, 250, "Say bye to your saves, but\nyou can fix that broken vibe.", 8);
+        add(reinstallExplanationText);
 
-        var restartText:FlxText = new FlxText(10, 200, "> Restart in Safe Mode", 8);
-       // add(restartText);
-        var restartText:FlxText = new FlxText(10, 210, "Disable any script or style\nfrom the /a/boot/ folder", 8);
-        restartText.setFormat(null, 8, 0xFFC9D872);
-        //add(restartText);
+        var restartText:FlxText = new FlxText(10, 295, "> Restart in SFW Mode");
+		restartText.setFormat(null, 10, FlxColor.YELLOW);
+        add(restartText);
+        var restartText:FlxText = new FlxText(10, 310, "Turn off any script or style\nfrom the /a/boot/ jam", 8);
+        add(restartText);
         
-        var continueText:FlxText = new FlxText(10, 240, "> Continue normal boot", 8);
-        //add(continueText);
+        var continueText:FlxText = new FlxText(10, 355, "> Keep the Funk funkin");
+		continueText.setFormat(null, 10, FlxColor.YELLOW);
+        add(continueText);
     }
 
     override function update(elapsed:Float)
