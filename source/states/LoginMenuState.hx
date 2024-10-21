@@ -2,6 +2,7 @@ package states;
 
 import shaders.CRTShader;
 import flixel.FlxG;
+import flixel.ui.FlxButton;
 import flixel.group.FlxGroup;
 import flixel.util.FlxSpriteUtil;
 import openfl.filters.ShaderFilter;
@@ -22,16 +23,23 @@ class LoginMenuState extends MusicBeatState {
     public var welcomeSprite:FlxSprite;
     public var clickToBegin:FlxSprite;
     public var dividerSprite:FlxSprite;
-    public var powerBtnSprite:FlxSprite;
     public var foregroundCloud:FlxSprite;
     public var desktopTheme:String;
 
     public var randomUser:String = "";
 
     private var floatUp:Bool = true;
+    private var loginWindowOpen:Bool = false;
+
+    private var loginWindow:FlxSprite;
+    private var cancelBtn:FlxButton;
+    private var okBtn:FlxButton;
+    private var xBtn:FlxButton;
+    public var shutdownBtn:FlxButton;
 
     override function create() {
         desktopTheme = ClientPrefs.data.desktopTheme;
+
         shader = new CRTShader(0.3, 0.55);
         FlxG.camera.setFilters([new ShaderFilter(shader)]);
 
@@ -56,30 +64,66 @@ class LoginMenuState extends MusicBeatState {
     }
 
     override function update(elapsed:Float) {
-        if (FlxG.sound.music != null)
-            Conductor.songPosition = FlxG.sound.music.time;
-
-        if (FlxG.mouse.justPressed) {
-            handleMouseClick();
-        }
-
+        updateSongPosition();
         super.update(elapsed);
     }
 
-    private function handleMouseClick():Void {
-        for (i in 0...loginIconGroup.length) {
-            if (FlxG.mouse.overlaps(loginIconGroup.members[i])) {
-                trace('Icon ' + i + ' clicked');
+    private function updateSongPosition():Void {
+        if (FlxG.sound.music != null)
+            Conductor.songPosition = FlxG.sound.music.time;
+    }
 
-                if (i == 2 && randomUser == "87") {
-                    handleGoldenFreddyClick();
+    private function handleMouseClick(sprite:String = ""):Void {
+        switch (sprite) {
+            case "newUser":
+                return;
+            case "shutdown":
+                handlePowerButtonClick();
+            case "87":
+                handleGoldenFreddyClick();
+            default:
+                if (!loginWindowOpen) {
+                    openLoginWindow();
                 }
-            }
         }
+    }
 
-        if (FlxG.mouse.overlaps(powerBtnSprite)) {
-            handlePowerButtonClick();
-        }
+    private function openLoginWindow():Void {
+        loginWindow = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/login_window'));
+        loginWindow.scale.set(1.5, 1.5);
+        loginWindow.screenCenter(XY);
+        add(loginWindow);
+
+        cancelBtn = new FlxButton(825, 495, function() {
+            closeFunction();
+        });
+        cancelBtn.loadGraphic(Paths.image('loginmenu/login_cancel'));
+        cancelBtn.scale.set(1.5, 1.5);
+        add(cancelBtn);
+
+        okBtn = new FlxButton(740, 495, function() {
+            closeFunction();
+        });
+        okBtn.loadGraphic(Paths.image('loginmenu/login_ok'));
+        okBtn.scale.set(1.5, 1.5);
+        add(okBtn);
+
+        xBtn = new FlxButton(880, 197, function() {
+            closeFunction();
+        });
+        xBtn.loadGraphic(Paths.image('loginmenu/login_x'));
+        xBtn.scale.set(1.5, 1.5);
+        add(xBtn);
+
+        loginWindowOpen = true;
+    }
+
+    private function closeFunction():Void {
+        loginWindow.kill();
+        cancelBtn.kill();
+        okBtn.kill();
+        xBtn.kill();
+        loginWindowOpen = false;
     }
 
     private function handlePowerButtonClick():Void {
@@ -87,25 +131,21 @@ class LoginMenuState extends MusicBeatState {
         remove(loginIconGroup);
         remove(usernameGroup);
 
-        var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('friendzonedLogoSD${BootState.logoInt}'));
-        friendzonedLogo.screenCenter(XY);
-        add(friendzonedLogo);
+        var logo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('friendzonedLogoSD${BootState.logoInt}'));
+        logo.screenCenter(XY);
+        add(logo);
 
-        var shutdownText:FlxText = new FlxText(0, 0, 'FriendzonedOS is shutting down...', 15);
-        shutdownText.x = (FlxG.width - shutdownText.width) / 2;
-        shutdownText.y = friendzonedLogo.y + friendzonedLogo.height + 10;
-        add(shutdownText);
+        var text:FlxText = new FlxText(0, 0, 'FriendzonedOS is shutting down...', 15);
+        text.x = (FlxG.width - text.width) / 2;
+        text.y = logo.y + logo.height + 10;
+        add(text);
 
-        var loadingSprite:FlxSprite = new FlxSprite();
-        loadingSprite.loadGraphic(Paths.image('loading'), true, 225, 225);
+        var loadingSprite:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loading'), true, 225, 225);
         loadingSprite.screenCenter(XY);
-        loadingSprite.y += 125;
-
         loadingSprite.scale.set(0.5, 0.5);
-
+        loadingSprite.y += 125;
         loadingSprite.animation.add("loading", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], 24);
         loadingSprite.animation.play("loading");
-
         add(loadingSprite);
 
         new FlxTimer().start(3, function(timer:FlxTimer) {
@@ -115,10 +155,8 @@ class LoginMenuState extends MusicBeatState {
 
     private function handleGoldenFreddyClick():Void {
         FlxG.sound.play(Paths.sound('GoldenFreddyScream'));
-
         var goldenFreddy:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/Golden_Freddy'));
         add(goldenFreddy);
-
         new FlxTimer().start(3, function(timer:FlxTimer) {
             Sys.exit(1);
         });
@@ -132,18 +170,22 @@ class LoginMenuState extends MusicBeatState {
         for (i in 0...4) {
             var icon:FlxSprite = cast loginIconGroup.members[i];
             var username:FlxText = cast usernameGroup.members[i];
-
             icon.y += floatInt;
             username.y += floatInt;
         }
 
+        moveClouds();
+
+        floatUp = !floatUp;
+    }
+
+    private function moveClouds():Void {
         for (i in 0...foregroundCloudGroup.length) {
             var cloud:FlxSprite = cast foregroundCloudGroup.members[i];
-
             if (!cloud.isOnScreen()) {
                 cloud.x = -cloud.width + 1;
             }
-
+            
             switch (FlxG.random.int(0, 3)) {
                 case 0:
                     cloud.y += 1;
@@ -155,8 +197,6 @@ class LoginMenuState extends MusicBeatState {
                     cloud.x += 1;
             }
         }
-
-        floatUp = !floatUp;
     }
 
     function renderUsers() {
@@ -196,7 +236,12 @@ class LoginMenuState extends MusicBeatState {
         var yPos:Float = 216;
 
         for (i in 0...icons.length) {
-            var icon = new FlxSprite(xPos, yPos).loadGraphic(Paths.image('loginmenu/icons/' + icons[i]));
+            var iconName = icons[i];
+            var icon:FlxButton = new FlxButton(xPos, yPos, function() {
+                handleMouseClick(iconName);
+            });
+
+            icon.loadGraphic(Paths.image('loginmenu/icons/' + icons[i]));
             loginIconGroup.add(icon);
 
             var usernameText = new FlxText(xPos + 59, yPos + (iconHeight / 2), usernames[i], 30);
@@ -205,10 +250,10 @@ class LoginMenuState extends MusicBeatState {
             usernameGroup.add(usernameText);
 
             yPos += (iconHeight + iconPadding);
-        }
+        } 
     }
 
-    function renderLoginMenu(desktopTheme) {
+    function renderLoginMenu(desktopTheme:String) {
         loginBg = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/${desktopTheme}/bg'));
         loginBgGradient = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/${desktopTheme}/bg_gradient'));
         borderSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/${desktopTheme}/border'));
@@ -217,7 +262,12 @@ class LoginMenuState extends MusicBeatState {
         welcomeSprite = new FlxSprite(253, 276).loadGraphic(Paths.image('loginmenu/${desktopTheme}/welcome'));
         clickToBegin = new FlxSprite(229, 330).loadGraphic(Paths.image('loginmenu/${desktopTheme}/beginText'));
         dividerSprite = new FlxSprite(616, 203).loadGraphic(Paths.image('loginmenu/${desktopTheme}/divider'));
-        powerBtnSprite = new FlxSprite(43, 629).loadGraphic(Paths.image('loginmenu/${desktopTheme}/off_switch'));
+
+        shutdownBtn = new FlxButton(43, 629, function() {
+            handleMouseClick("shutdown");
+        });
+
+        shutdownBtn.loadGraphic(Paths.image('loginmenu/${desktopTheme}/off_switch'));
 
         loginMenuBg.add(loginBg);
         loginMenuBg.add(loginBgGradient);
@@ -231,7 +281,7 @@ class LoginMenuState extends MusicBeatState {
         flashingEffect(clickToBegin, 2, 2);
 
         loginMenuUI.add(dividerSprite);
-        loginMenuUI.add(powerBtnSprite);
+        loginMenuUI.add(shutdownBtn);
 
         renderUsers();
     }
