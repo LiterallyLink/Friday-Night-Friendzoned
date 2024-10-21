@@ -15,6 +15,7 @@ class LoginMenuState extends MusicBeatState {
     public var loginMenuUI:FlxGroup = new FlxGroup();
     public var loginIconGroup:FlxGroup = new FlxGroup();
     public var usernameGroup:FlxGroup = new FlxGroup();
+    public var loginGroup:FlxGroup = new FlxGroup();
 
     public var loginBg:FlxSprite;
     public var loginBgGradient:FlxSprite;
@@ -36,6 +37,22 @@ class LoginMenuState extends MusicBeatState {
     private var okBtn:FlxButton;
     private var xBtn:FlxButton;
     public var shutdownBtn:FlxButton;
+
+    public var usernameMap:Map<String, String> = [
+        'bf' => "Her Bf <3",
+        'gf' => "His Gf <3",
+        'darnell' => "Darnell",
+        'father' => "Daddy D.",
+        'mommy' => "MOM CHANGE UR PFP",
+        'nene' => "Nene",
+        'pico' => "pico",
+        'senpai' => "Sven",
+        'tank' => "Steve",
+        '87' => "ITS ME",
+        'spooky' => "SKID N' PUMP",
+        "newUser" => "New User"
+    ];
+    
 
     override function create() {
         desktopTheme = ClientPrefs.data.desktopTheme;
@@ -74,55 +91,93 @@ class LoginMenuState extends MusicBeatState {
     }
 
     private function handleMouseClick(sprite:String = ""):Void {
+        if (loginWindowOpen) return;
+
         switch (sprite) {
             case "newUser":
-                return;
+                openLoginWindow(true, sprite);
             case "shutdown":
                 handlePowerButtonClick();
             case "87":
                 handleGoldenFreddyClick();
             default:
-                if (!loginWindowOpen) {
-                    openLoginWindow();
-                }
+                openLoginWindow(sprite);
         }
+
+        trace(loginWindowOpen);
     }
 
-    private function openLoginWindow():Void {
+    private function openLoginWindow(?newUser:Bool = false, userIcon:String):Void {
         loginWindow = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/login_window'));
         loginWindow.scale.set(1.5, 1.5);
         loginWindow.screenCenter(XY);
-        add(loginWindow);
+        loginGroup.add(loginWindow);
 
         cancelBtn = new FlxButton(825, 495, function() {
             closeFunction();
         });
         cancelBtn.loadGraphic(Paths.image('loginmenu/login_cancel'));
         cancelBtn.scale.set(1.5, 1.5);
-        add(cancelBtn);
+        loginGroup.add(cancelBtn);
 
         okBtn = new FlxButton(740, 495, function() {
             closeFunction();
         });
         okBtn.loadGraphic(Paths.image('loginmenu/login_ok'));
         okBtn.scale.set(1.5, 1.5);
-        add(okBtn);
+        loginGroup.add(okBtn);
 
         xBtn = new FlxButton(880, 197, function() {
             closeFunction();
         });
         xBtn.loadGraphic(Paths.image('loginmenu/login_x'));
         xBtn.scale.set(1.5, 1.5);
-        add(xBtn);
+        loginGroup.add(xBtn);
 
+        var loginIcon = new FlxSprite().loadGraphic(Paths.image('loginmenu/icons/' + userIcon));
+        loginIcon.scale.set(1.5, 1.5);
+        loginIcon.screenCenter(XY); 
+        loginIcon.y -= 50;
+
+        if (newUser) {
+            var welcomeText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/welcome_text'));
+            welcomeText.scale.set(1.5, 1.5);
+            welcomeText.screenCenter(XY);
+            welcomeText.y -= 100;
+            welcomeText.x += 50;
+            loginGroup.add(welcomeText);
+
+            var loginText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_text'));
+            loginText.scale.set(1.5, 1.5);
+            loginText.screenCenter(XY);
+            loginText.y -= 60;
+            loginText.x += 30;
+            loginGroup.add(loginText);
+
+            var newUsername:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_new_user'));
+            newUsername.scale.set(1.5, 1.5);
+            newUsername.screenCenter(XY);
+            loginGroup.add(newUsername);
+
+            loginIcon.y -= 30;
+            loginIcon.x -= 190;
+
+        } else {
+            var usernameText = new FlxText(0, 0, usernameMap[userIcon], 30);
+            usernameText.borderStyle = SHADOW;
+            usernameText.screenCenter(XY);
+            usernameText.y += 20;
+            loginGroup.add(usernameText);
+        }
+
+        loginGroup.add(loginIcon);
+
+        add(loginGroup);
         loginWindowOpen = true;
     }
 
     private function closeFunction():Void {
-        loginWindow.kill();
-        cancelBtn.kill();
-        okBtn.kill();
-        xBtn.kill();
+        loginGroup.clear();
         loginWindowOpen = false;
     }
 
@@ -147,6 +202,8 @@ class LoginMenuState extends MusicBeatState {
         loadingSprite.animation.add("loading", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], 24);
         loadingSprite.animation.play("loading");
         add(loadingSprite);
+
+        FlxG.sound.play(Paths.sound('shutdown'));
 
         new FlxTimer().start(3, function(timer:FlxTimer) {
             Sys.exit(1);
@@ -200,35 +257,15 @@ class LoginMenuState extends MusicBeatState {
     }
 
     function renderUsers() {
-        var usernameMap:Map<String, String> = [
-            'darnell' => "Darnell",
-            'father' => "Daddy D.",
-            'mommy' => "MOM CHANGE UR PFP",
-            'nene' => "Nene",
-            'pico' => "pico",
-            'senpai' => "Sven",
-            'tank' => "Steve",
-            '87' => "ITS ME",
-            'spooky' => "SKID N' PUMP"
-        ];
-
         var icons:Array<String> = ["bf", "gf"];
-        var usernames:Array<String> = ["Her Bf <3", "His Gf <3"];
-
         var randomUserArray:Array<String> = ["darnell", "father", "mommy", "nene", "pico", "senpai", "spooky", "tank"];
         FlxG.random.shuffle(randomUserArray);
 
-        if (FlxG.random.int(1, 100) == 87) {
-            randomUser = "87";
-        } else {
-            randomUser = randomUserArray.pop();
-        }
+        if (FlxG.random.int(1, 100) == 87) randomUserArray.push("87");
+        randomUser = randomUserArray.pop();
 
         icons.push(randomUser);
-        usernames.push(usernameMap[randomUser]);
-
         icons.push("newUser");
-        usernames.push("New User");
 
         var iconHeight:Float = 59;
         var iconPadding:Float = 3;
@@ -241,10 +278,10 @@ class LoginMenuState extends MusicBeatState {
                 handleMouseClick(iconName);
             });
 
-            icon.loadGraphic(Paths.image('loginmenu/icons/' + icons[i]));
+            icon.loadGraphic(Paths.image('loginmenu/icons/' + iconName));
             loginIconGroup.add(icon);
 
-            var usernameText = new FlxText(xPos + 59, yPos + (iconHeight / 2), usernames[i], 30);
+            var usernameText = new FlxText(xPos + 59, yPos + (iconHeight / 2), usernameMap[iconName], 30);
             usernameText.borderStyle = SHADOW;
             usernameText.y -= (usernameText.height / 2);
             usernameGroup.add(usernameText);
