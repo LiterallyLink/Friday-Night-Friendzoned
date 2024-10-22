@@ -340,7 +340,7 @@ class LoginMenuState extends MusicBeatState {
         var randomUserArray:Array<String> = ["darnell", "father", "mommy", "nene", "pico", "senpai", "spooky", "tank"];
         FlxG.random.shuffle(randomUserArray);
 
-        if (FlxG.random.int(1, 100) == 87) randomUserArray.push("87");
+        randomUserArray.push("87");
         var randomUser:String = randomUserArray.pop();
 
         icons.push(randomUser);
