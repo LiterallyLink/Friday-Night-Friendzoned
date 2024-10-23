@@ -7,12 +7,16 @@ import flixel.group.FlxGroup;
 import flixel.util.FlxSpriteUtil;
 import openfl.filters.ShaderFilter;
 import flixel.addons.ui.FlxInputText;
+import flixel.group.FlxSpriteContainer;
+import flixel.math.FlxPoint;
 
 class LoginMenuState extends MusicBeatState {
-    public var loginGroup:FlxGroup = new FlxGroup();
     private var passwordInput:FlxInputText;
     private var usernameInput:FlxInputText;
     private var okBtn:FlxButton;
+    public var loginHeader:FlxSprite;
+    public var loginGroup:FlxSpriteContainer = new FlxSpriteContainer();
+
     public var loginMenuBg:FlxGroup = new FlxGroup();
     public var foregroundCloudGroup:FlxGroup = new FlxGroup();
     public var loginMenuUI:FlxGroup = new FlxGroup();
@@ -20,11 +24,16 @@ class LoginMenuState extends MusicBeatState {
     public var usernameGroup:FlxGroup = new FlxGroup();
 
     public var shader:CRTShader;
-
     private var floatUp:Bool = true;
-    private var loginWindowOpen:Bool = false;
 
-    public var usernameMap:Map<String, String> = [
+    public var loginWindow:FlxSprite;
+    private var loginWindowOpen:Bool = false;
+    private var loginTheme:String;
+
+    private var isDragging:Bool = false;
+    private var dragOffset:FlxPoint = new FlxPoint();
+
+    public static final USERNAME_MAP:Map<String, String> = [
         'bf' => "Her Bf <3",
         'gf' => "His Gf <3",
         'darnell' => "Darnell",
@@ -39,10 +48,9 @@ class LoginMenuState extends MusicBeatState {
         "newUser" => "New User"
     ];
     
-
     override function create() {
         var sound:FlxSound = null;
-        var loginTheme:String = ClientPrefs.data.desktopTheme;
+        loginTheme = ClientPrefs.data.desktopTheme;
 
         shader = new CRTShader(0.3, 0.55);
         FlxG.camera.setFilters([new ShaderFilter(shader)]);
@@ -69,10 +77,36 @@ class LoginMenuState extends MusicBeatState {
     }
 
     override function update(elapsed:Float) {
-        updateSongPosition();
         super.update(elapsed);
+        
+        if (loginWindowOpen) {
+            handleDragging();
+        }
+        
+        updateSongPosition();
     }
-
+    
+    private function handleDragging():Void {
+        if (FlxG.mouse.justPressed && loginHeader.overlapsPoint(FlxG.mouse.getPosition())) {
+            isDragging = true;
+            dragOffset.set(
+                FlxG.mouse.x - loginGroup.x,
+                FlxG.mouse.y - loginGroup.y
+            );
+        }
+        
+        if (FlxG.mouse.justReleased) {
+            isDragging = false;
+        }
+        
+        if (isDragging) {
+            loginGroup.setPosition(
+                FlxG.mouse.x - dragOffset.x,
+                FlxG.mouse.y - dragOffset.y
+            );
+        }
+    }
+    
     private function updateSongPosition():Void {
         if (FlxG.sound.music != null)
             Conductor.songPosition = FlxG.sound.music.time;
@@ -102,27 +136,56 @@ class LoginMenuState extends MusicBeatState {
     }
     
     private function initLoginWindow():Void {
-        var loginWindow:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/login_window'));
-        loginWindow.scale.set(1.5, 1.5);
+        loginWindow = new FlxSprite(0, 0).loadGraphic(Paths.image('loginmenu/login_window'));
         loginWindow.screenCenter(XY);
+
+        loginHeader = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_header'));
+        loginHeader.screenCenter(XY);
+        loginHeader.y -= (loginWindow.height / 2) - loginHeader.height + 6;
+
+        loginGroup.add(loginHeader);
         loginGroup.add(loginWindow);
     }
     
     private function initLoginButtons():Void {
-        var cancelBtn:FlxButton = new FlxButton(825, 495, closeFunction);
+        var buttonPadding:Int = 15;
+        var xBtnPadding:Int = 10;
+
+        var cancelBtn:FlxButton = new FlxButton(0, 0, function() {
+            closeFunction();
+        });
         cancelBtn.loadGraphic(Paths.image('loginmenu/login_cancel'));
-        cancelBtn.scale.set(1.5, 1.5);
-        loginGroup.add(cancelBtn);
+        cancelBtn.setPosition(
+            (loginWindow.x + loginWindow.width) - (cancelBtn.width + buttonPadding),
+            (loginWindow.y + loginWindow.height) - (cancelBtn.height + buttonPadding)
+        );
     
-        okBtn = new FlxButton(740, 495, function() {});
+        trace(loginWindow.width - (cancelBtn.width + buttonPadding));
+        okBtn = new FlxButton(0, 0, function() {});
         okBtn.loadGraphic(Paths.image('loginmenu/login_dimmed_ok'));
-        okBtn.scale.set(1.5, 1.5);
-        loginGroup.add(okBtn);
+        okBtn.setPosition(
+            cancelBtn.x - (okBtn.width + buttonPadding),
+            cancelBtn.y
+        );
     
-        var xBtn:FlxButton = new FlxButton(880, 197, closeFunction);
+        var xBtn:FlxButton = new FlxButton(0, 0, function() {
+            closeFunction();
+        });
         xBtn.loadGraphic(Paths.image('loginmenu/login_x'));
-        xBtn.scale.set(1.5, 1.5);
+        xBtn.setPosition(
+            (loginWindow.x + loginWindow.width) - (xBtn.width + xBtnPadding),
+            loginHeader.y + (loginHeader.height / 2) - (xBtn.height / 2)
+        );
+
+        loginGroup.add(cancelBtn);
+        loginGroup.add(okBtn);
         loginGroup.add(xBtn);
+    }
+
+    private function inputCallback(text:String, action:String):Void {
+        var randomInt:Int = FlxG.random.int(1, 5);
+        FlxG.sound.play(Paths.sound('keyboard/keypress' + randomInt));
+        updateOkButtonState();
     }
     
     private function initInputFields(newUser:Bool):Void {
@@ -131,11 +194,7 @@ class LoginMenuState extends MusicBeatState {
         passwordInput.maxLength = 10;
         loginGroup.add(passwordInput);
     
-        passwordInput.callback = function(text:String, action:String) {
-            var randomInt:Int = FlxG.random.int(1, 5);
-            FlxG.sound.play(Paths.sound('keyboard/keypress' + randomInt));
-            updateOkButtonState();
-        };
+        passwordInput.callback = inputCallback;
         
         if (newUser) {
             usernameInput = new FlxInputText(510, 368, 350, "", 17, FlxColor.BLACK, FlxColor.WHITE);
@@ -144,11 +203,7 @@ class LoginMenuState extends MusicBeatState {
             usernameInput.hasFocus = true;
             loginGroup.add(usernameInput);
     
-            usernameInput.callback = function(text:String, action:String) {
-                var randomInt:Int = FlxG.random.int(1, 5);
-                FlxG.sound.play(Paths.sound('keyboard/keypress' + randomInt));
-                updateOkButtonState();
-            };
+            usernameInput.callback = inputCallback;
         } else {
             passwordInput.hasFocus = true;
         }
@@ -164,21 +219,18 @@ class LoginMenuState extends MusicBeatState {
             loginIcon.x -= 190;
     
             var welcomeText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_welcome'));
-            welcomeText.scale.set(1.5, 1.5);
             welcomeText.screenCenter(XY);
             welcomeText.y -= 100;
             welcomeText.x += 50;
             loginGroup.add(welcomeText);
     
             var loginText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_text'));
-            loginText.scale.set(1.5, 1.5);
             loginText.screenCenter(XY);
             loginText.y -= 60;
             loginText.x += 20;
             loginGroup.add(loginText);
     
             var newUsername:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_new_username'));
-            newUsername.scale.set(1.5, 1.5);
             newUsername.screenCenter(XY);
             newUsername.x -= 180;
             newUsername.y += 20;
@@ -186,7 +238,7 @@ class LoginMenuState extends MusicBeatState {
         } else {
             loginIcon.y -= 50;
     
-            var usernameText = new FlxText(usernameMap[userIcon], 30);
+            var usernameText = new FlxText(USERNAME_MAP[userIcon], 30);
             usernameText.borderStyle = SHADOW;
             usernameText.screenCenter(XY);
             usernameText.y += 20;
@@ -205,7 +257,9 @@ class LoginMenuState extends MusicBeatState {
     
         if (isActive) {
             okBtn.loadGraphic(Paths.image('loginmenu/login_ok'));
-            okBtn.onUp.callback = closeFunction;
+            okBtn.onUp.callback = function() {
+                LoadingState.loadAndSwitchState(new DesktopState());
+            }
         } else {
             okBtn.loadGraphic(Paths.image('loginmenu/login_dimmed_ok'));
             okBtn.onUp.callback = function() {};
@@ -213,12 +267,17 @@ class LoginMenuState extends MusicBeatState {
     }
     
     private function closeFunction():Void {
-        trace("Closing login window...");
         loginGroup.clear();
+        loginGroup.setPosition(0, 0);
         loginWindowOpen = false;
 
         if (passwordInput != null) {
             passwordInput.text = "";
+        }
+    
+        if (usernameInput != null) {
+            usernameInput.text = "";
+            usernameInput = null;
         }
     }
 
@@ -265,11 +324,6 @@ class LoginMenuState extends MusicBeatState {
     override function beatHit() {
         super.beatHit();
 
-        bumpIcons();
-        moveClouds();
-    }
-
-    private function bumpIcons() {
         var floatInt:Int = floatUp ? 1 : -1;
 
         for (i in 0...4) {
@@ -280,9 +334,7 @@ class LoginMenuState extends MusicBeatState {
         }
 
         floatUp = !floatUp;
-    }
 
-    private function moveClouds():Void {
         for (i in 0...foregroundCloudGroup.length) {
             var cloud:FlxSprite = cast foregroundCloudGroup.members[i];
             if (!cloud.isOnScreen()) {
@@ -360,7 +412,7 @@ class LoginMenuState extends MusicBeatState {
             icon.loadGraphic(Paths.image('loginmenu/icons/' + iconName));
             loginIconGroup.add(icon);
 
-            var usernameText = new FlxText(xPos + 59, yPos + (iconHeight / 2), usernameMap[iconName], 30);
+            var usernameText = new FlxText(xPos + 59, yPos + (iconHeight / 2), USERNAME_MAP[iconName], 30);
             usernameText.borderStyle = SHADOW;
             usernameText.y -= (usernameText.height / 2);
             usernameGroup.add(usernameText);
