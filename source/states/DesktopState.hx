@@ -3,7 +3,9 @@ package states;
 import flixel.FlxG;
 import flixel.group.FlxGroup;
 import flixel.util.FlxSpriteUtil;
-import flixel.ui.FlxButton; 
+import flixel.ui.FlxButton;
+import backend.ApplicationButton;
+import flixel.math.FlxRect;
 
 import shaders.CRTShader;
 import openfl.filters.ShaderFilter;
@@ -24,43 +26,57 @@ class DesktopState extends MusicBeatState
 
         FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
         
-        var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/bgs/' + desktopTheme));
+        var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/bgs/${desktopTheme}'));
         add(desktopBg);
 
         var taskbar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/taskbar'));
         taskbar.y = FlxG.height - taskbar.height;
         add(taskbar);
 
-        var startBtn = new FlxButton(5, 0, null, function() {
+        var startButton = new FlxButton(5, 0, null, function() {
             // FlxG.switchState(new StartMenuState());
         });
-        startBtn.loadGraphic(Paths.image('desktop/icons/start'));
-        startBtn.y = taskbar.y + (taskbar.height / 2) - (startBtn.height / 2);
-        add(startBtn);
+        startButton.loadGraphic(Paths.image('desktop/icons/start'));
+        startButton.y = taskbar.y + (taskbar.height / 2) - (startButton.height / 2);
+        add(startButton);
 
-        var photoAlbumBtn = new FlxButton(0, 0, null, function() {
+        var photoAlbumButton = new FlxButton(0, 0, null, function() {
             // FlxG.switchState(new PhotoAlbumState());
         });
-        photoAlbumBtn.loadGraphic(Paths.image('desktop/icons/photo_album'));
-        photoAlbumBtn.y = taskbar.y + (taskbar.height / 2) - (photoAlbumBtn.height / 2);
-        photoAlbumBtn.x = (startBtn.width * 2) - (photoAlbumBtn.width / 2);
-        add(photoAlbumBtn);
+        photoAlbumButton.loadGraphic(Paths.image('desktop/icons/photo_album'));
+        photoAlbumButton.y = taskbar.y + (taskbar.height / 2) - (photoAlbumButton.height / 2);
+        photoAlbumButton.x = (startButton.width * 2) - (photoAlbumButton.width / 2);
+        add(photoAlbumButton);
 
-        var musicPlayerBtn = new FlxButton(0, 0, null, function() {
+        var musicPlayerButton = new FlxButton(0, 0, null, function() {
             // FlxG.switchState(new MusicPlayerState());
         });
-        musicPlayerBtn.loadGraphic(Paths.image('desktop/icons/music_player'));
-        musicPlayerBtn.y = taskbar.y + (taskbar.height / 2) - (musicPlayerBtn.height / 2);
-        musicPlayerBtn.x = (photoAlbumBtn.x + photoAlbumBtn.width) + 10;
-        add(musicPlayerBtn);
+        musicPlayerButton.loadGraphic(Paths.image('desktop/icons/music_player'));
+        musicPlayerButton.y = taskbar.y + (taskbar.height / 2) - (musicPlayerButton.height / 2);
+        musicPlayerButton.x = (photoAlbumButton.x + photoAlbumButton.width) + 10;
+        add(musicPlayerButton);
 
-        var achievementBtn = new FlxButton(0, 0, null, function() {
+        var achievementButton = new FlxButton(0, 0, null, function() {
             // FlxG.switchState(new AchievementState());
         });
-        achievementBtn.loadGraphic(Paths.image('desktop/icons/achievements'));
-        achievementBtn.y = taskbar.y + (taskbar.height / 2) - (achievementBtn.height / 2);
-        achievementBtn.x = (musicPlayerBtn.x + musicPlayerBtn.width) + 10;
-        add(achievementBtn);
+        achievementButton.loadGraphic(Paths.image('desktop/icons/achievements'));
+        achievementButton.y = taskbar.y + (taskbar.height / 2) - (achievementButton.height / 2);
+        achievementButton.x = (musicPlayerButton.x + musicPlayerButton.width) + 10;
+        add(achievementButton);
+
+        var desktopBounds = new FlxRect(0, 0, FlxG.width, FlxG.height - taskbar.height);
+
+        var creditsButton = new ApplicationButton(30, 30, "Credits.txt", 'desktop/icons/notes', desktopBounds,
+            () -> {
+                // Credits Application
+            });
+        add(creditsButton);
+
+        var minecraftButton = new ApplicationButton(60, 60, "Minecraft", 'desktop/icons/mc', desktopBounds,
+            () -> {
+                // Minecraft Application
+            });
+        add(minecraftButton);
 	}
 
 	override function destroy()
