@@ -75,7 +75,13 @@ import states.BootState;
 	public var safeFrames:Float = 10;
 	public var guitarHeroSustains:Bool = true;
 	public var discordRPC:Bool = true;
+
 	public var desktopTheme:String = 'tank';
+
+	public var needToCreateNewUser:Bool = true;
+	public var userCreatedName:String = "";
+	public var userCreatedPassword:String = "";
+	public var userCreatedIcon:String = 'default';
 }
 
 class ClientPrefs {
