@@ -80,7 +80,7 @@ class BootState extends MusicBeatState {
             });
         }
 
-        var enterBIOSText:FlxText = new FlxText(10, FlxG.height - 30, "Press DEL to enter SETUP").setFormat(null, 8, FlxColor.YELLOW);
+        var enterBIOSText:FlxText = new FlxText(10, FlxG.height - 30, "Press <DEL> to enter SETUP").setFormat(null, 8, FlxColor.YELLOW);
         bootTextGroup.add(enterBIOSText);
 
         new FlxTimer().start(delay + 0.5, function(timer:FlxTimer):Void {
