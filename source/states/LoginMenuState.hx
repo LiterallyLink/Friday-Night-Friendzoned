@@ -18,11 +18,11 @@ typedef CharacterCredentials = {
 };
 
 class LoginMenuState extends MusicBeatState {
-    public var loginGroup:FlxSpriteContainer = new FlxSpriteContainer();
-    public var backgroundLayer:FlxGroup = new FlxGroup();
+    public var loginWindowContainer:FlxSpriteContainer = new FlxSpriteContainer();
+    public var backgroundElements:FlxGroup = new FlxGroup();
     public var foregroundCloudGroup:FlxGroup = new FlxGroup();
     public var interfaceElements:FlxGroup = new FlxGroup();
-    public var userIconButtons:FlxGroup = new FlxGroup();
+    public var userIcons:FlxGroup = new FlxGroup();
     public var usernameGroup:FlxGroup = new FlxGroup();
 
     private var passwordField:FlxInputText;
@@ -31,12 +31,12 @@ class LoginMenuState extends MusicBeatState {
     public var loginHeader:FlxSprite;
     public var loginWindow:FlxSprite;
 
-    private var loginWindowOpen:Bool = false;
+    private var isLoginWindowVisible:Bool = false;
     private var isWindowBeingDragged:Bool = false;
-    private var windowDragOffset:FlxPoint = new FlxPoint();
+    private var dragOffset:FlxPoint = new FlxPoint();
     private var floatUp:Bool = true;
     private var loginTheme:String;
-    private var createNewUser:Bool;
+    private var isNewUserRequired:Bool;
     private var selectedUser = "";
 
     public var crtEffect:CRTShader;
@@ -54,10 +54,12 @@ class LoginMenuState extends MusicBeatState {
         '87' => { username: "ITS ME", password: null, icon: "87" },
         'spooky' => { username: "SKID N' PUMP", password: null, icon: "spooky" },
     ];
-    
+
     override function create() {
         loginTheme = ClientPrefs.data.desktopTheme;
-        createNewUser = ClientPrefs.data.needToCreateNewUser;
+        isNewUserRequired = ClientPrefs.data.needToCreateNewUser;
+
+        FlxTransitionableState.skipNextTransIn = true;
 
         crtEffect = new CRTShader(0.3, 0.55);
         FlxG.camera.setFilters([new ShaderFilter(crtEffect)]);
@@ -68,10 +70,10 @@ class LoginMenuState extends MusicBeatState {
         FlxG.sound.music.fadeIn(4, 0, 0.7);
         FlxG.sound.play(Paths.sound('humming'), true);
 
-        add(backgroundLayer);
+        add(backgroundElements);
         add(foregroundCloudGroup);
         add(interfaceElements);
-        add(userIconButtons);
+        add(userIcons);
         add(usernameGroup);
 
         renderLoginMenu();
@@ -80,17 +82,17 @@ class LoginMenuState extends MusicBeatState {
     override function update(elapsed:Float) {
         super.update(elapsed);
         
-        if (loginWindowOpen && FlxG.mouse.justPressed && loginHeader.overlapsPoint(FlxG.mouse.getPosition())) {
+        if (isLoginWindowVisible && FlxG.mouse.justPressed && loginHeader.overlapsPoint(FlxG.mouse.getPosition())) {
             isWindowBeingDragged = true;
-            windowDragOffset.set(FlxG.mouse.x - loginGroup.x, FlxG.mouse.y - loginGroup.y);
+            dragOffset.set(FlxG.mouse.x - loginWindowContainer.x, FlxG.mouse.y - loginWindowContainer.y);
         }
 
         if (FlxG.mouse.justReleased) isWindowBeingDragged = false;
 
         if (isWindowBeingDragged) {
-            loginGroup.setPosition(
-                FlxG.mouse.x - windowDragOffset.x,
-                FlxG.mouse.y - windowDragOffset.y
+            loginWindowContainer.setPosition(
+                FlxG.mouse.x - dragOffset.x,
+                FlxG.mouse.y - dragOffset.y
             );
         }
         
@@ -112,10 +114,10 @@ class LoginMenuState extends MusicBeatState {
         var powerButton:FlxButton = new FlxButton(43, 629, handlePowerButtonClick);
         powerButton.loadGraphic(Paths.image('loginmenu/${theme}/off_switch'));
 
-        backgroundLayer.add(loginBg);
-        backgroundLayer.add(loginBgGradient);
-        backgroundLayer.add(borderSprite);
-        backgroundLayer.add(bgClouds);
+        backgroundElements.add(loginBg);
+        backgroundElements.add(loginBgGradient);
+        backgroundElements.add(borderSprite);
+        backgroundElements.add(bgClouds);
 
         var cloudPositions:Array<{x:Int, y:Int}> = [
             {x: 248, y: 170},
@@ -148,19 +150,27 @@ class LoginMenuState extends MusicBeatState {
 
         var users:Array<String> = ["bf", "gf"];
         var randomUsers:Array<String> = ["darnell", "father", "mommy", "nene", "pico", "senpai", "spooky", "tank"];
+
         FlxG.random.shuffle(randomUsers);
 
-        if (FlxG.random.int(1, 100) == 87) randomUsers.push("87");
+        if (FlxG.random.int(1, 100) == 87) {
+            randomUsers.push("87");
+        }
+ 
         users.push(randomUsers.pop());
 
+
         for (i in 0...users.length) {
+            var currentUser = users[i];
+            var credentials = USER_CREDENTIALS[currentUser];
+
             var icon:FlxButton = new FlxButton(X_POS, Y_POS, "", () -> {
-                selectedUser = users[i];
+                selectedUser = currentUser;
                 handleIconClick();
             });
 
-            icon.loadGraphic(Paths.image('loginmenu/icons/${USER_CREDENTIALS[users[i]].icon}'));
-            userIconButtons.add(icon);
+            icon.loadGraphic(Paths.image('loginmenu/icons/${credentials.icon}'));
+            userIcons.add(icon);
 
             var usernameText = new FlxText(
                 X_POS + ICON_HEIGHT,
@@ -181,14 +191,14 @@ class LoginMenuState extends MusicBeatState {
             handleIconClick();
         });
         newUserIcon.loadGraphic(Paths.image(
-            createNewUser ? 'loginmenu/icons/newUser' : 'loginmenu/icons/${ClientPrefs.data.userCreatedIcon}'
+            isNewUserRequired ? 'loginmenu/icons/newUser' : 'loginmenu/icons/${ClientPrefs.data.userCreatedIcon}'
         ));
-        userIconButtons.add(newUserIcon);
+        userIcons.add(newUserIcon);
 
         var newUserText = new FlxText(
             X_POS + ICON_HEIGHT,
             Y_POS + (ICON_HEIGHT / 2),
-            createNewUser ? "New User" : ClientPrefs.data.userCreatedName,
+            isNewUserRequired ? "New User" : ClientPrefs.data.userCreatedName,
             FONT_SIZE
         );
         
@@ -201,7 +211,7 @@ class LoginMenuState extends MusicBeatState {
         FlxG.sound.music.stop();
 
         remove(interfaceElements);
-        remove(userIconButtons);
+        remove(userIcons);
         remove(usernameGroup);
 
         var logo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('friendzonedLogoSD${BootState.logoInt}'));
@@ -229,25 +239,18 @@ class LoginMenuState extends MusicBeatState {
     }
 
     private function handleIconClick():Void {
-        if (loginWindowOpen) return;
-    
-        switch (selectedUser) {
-            case "87":
-                handleGoldenFreddyClick();
-            case "newUser":
-                if (createNewUser) {
-                    openLoginWindow();
-                } else {
-                    // Handle existing custom user
-                    selectedUser = ClientPrefs.data.userCreatedIcon;
-                    openLoginWindow();
-                }
-            case "":
-                trace("No user selected"); // Optional debug line
-                return;
-            default:
-                openLoginWindow();
+        if (isLoginWindowVisible) return;
+        
+        if (selectedUser == "87") {
+            handleGoldenFreddyClick();
+            return;
         }
+        
+        if (selectedUser == "newUser" && !isNewUserRequired) {
+            selectedUser = ClientPrefs.data.userCreatedIcon;
+        }
+        
+        openLoginWindow();
     }
 
     private function handleGoldenFreddyClick():Void {
@@ -264,15 +267,45 @@ class LoginMenuState extends MusicBeatState {
         initLoginWindow();
         initLoginButtons();
         
-        if (selectedUser == "newUser" && createNewUser) {
+        if (selectedUser == "newUser" && isNewUserRequired) {
             initNewUser();
         } else {
             initPreExistingUser();
         }
     
         initLoginInputFields();
-        add(loginGroup);
-        loginWindowOpen = true;
+
+        loginWindowContainer.scale.set(0.5, 0.5);
+        loginWindowContainer.alpha = 0;
+        
+        // Store the original position
+        var originalX:Float = loginWindowContainer.x;
+        var originalY:Float = loginWindowContainer.y;
+
+        loginWindowContainer.x = originalX + (loginWindowContainer.width * 0.25);
+        loginWindowContainer.y = originalY + (loginWindowContainer.height * 0.25);
+
+        add(loginWindowContainer);
+
+        FlxTween.tween(loginWindowContainer.scale, {x: 1, y: 1}, 0.3, {
+            ease: FlxEase.backOut,
+            onComplete: function(tween:FlxTween) {
+                // Enable input fields after animation
+                if (usernameField != null) usernameField.hasFocus = true;
+                else passwordField.hasFocus = true;
+            }
+        });
+        
+        // Fade in
+        FlxTween.tween(loginWindowContainer, {
+            alpha: 1,
+            x: originalX,
+            y: originalY
+        }, 0.3, {
+            ease: FlxEase.quartOut
+        });
+
+        isLoginWindowVisible = true;
     }
 
     private function initLoginWindow() {
@@ -284,8 +317,8 @@ class LoginMenuState extends MusicBeatState {
         loginHeader.screenCenter(XY);
         loginHeader.y -= (loginWindow.height / 2) - loginHeader.height + loginHeaderPadding;
 
-        loginGroup.add(loginHeader);
-        loginGroup.add(loginWindow);
+        loginWindowContainer.add(loginHeader);
+        loginWindowContainer.add(loginWindow);
     }
 
     private function initLoginButtons() {
@@ -317,9 +350,9 @@ class LoginMenuState extends MusicBeatState {
             loginHeader.y + (loginHeader.height / 2) - (xBtn.height / 2)
         );
 
-        loginGroup.add(cancelBtn);
-        loginGroup.add(okBtn);
-        loginGroup.add(xBtn);
+        loginWindowContainer.add(cancelBtn);
+        loginWindowContainer.add(okBtn);
+        loginWindowContainer.add(xBtn);
     }
 
     private function initLoginInputFields() {
@@ -327,20 +360,18 @@ class LoginMenuState extends MusicBeatState {
         var EREG_PATTERN = new EReg("[^a-zA-Z0-9]", "g");
         var FONT_SIZE:Int = 17;
     
-        // Always create password field
         passwordField = new FlxInputText(510, 410, 350, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
         passwordField.callback = keyPressCallback;
         passwordField.customFilterPattern = EREG_PATTERN;
         passwordField.maxLength = MAX_FIELD_LENGTH;
-        loginGroup.add(passwordField);
+        loginWindowContainer.add(passwordField);
             
-        // Only create username field for new users
-        if (selectedUser == "newUser" && createNewUser) {
+        if (selectedUser == "newUser" && isNewUserRequired) {
             usernameField = new FlxInputText(510, 368, 350, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
             usernameField.callback = keyPressCallback;
             usernameField.customFilterPattern = EREG_PATTERN;
             usernameField.maxLength = MAX_FIELD_LENGTH;    
-            loginGroup.add(usernameField);
+            loginWindowContainer.add(usernameField);
             usernameField.hasFocus = true;
         } else {
             passwordField.hasFocus = true;
@@ -359,21 +390,21 @@ class LoginMenuState extends MusicBeatState {
         welcomeText.screenCenter(XY);
         welcomeText.y -= 100;
         welcomeText.x += 50;
-        loginGroup.add(welcomeText);
+        loginWindowContainer.add(welcomeText);
     
         var loginText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_text'));
         loginText.screenCenter(XY);
         loginText.y -= 60;
         loginText.x += 20;
-        loginGroup.add(loginText);
+        loginWindowContainer.add(loginText);
     
         var newUsername:FlxSprite = new FlxSprite().loadGraphic(Paths.image('loginmenu/login_new_username'));
         newUsername.screenCenter(XY);
         newUsername.x -= 180;
         newUsername.y += 20;
-        loginGroup.add(newUsername);
+        loginWindowContainer.add(newUsername);
     
-        loginGroup.add(loginIcon);
+        loginWindowContainer.add(loginIcon);
     }
 
     private function initPreExistingUser() {
@@ -391,8 +422,8 @@ class LoginMenuState extends MusicBeatState {
         usernameText.screenCenter(XY);
         usernameText.y += 20;
         
-        loginGroup.add(usernameText);
-        loginGroup.add(loginIcon);
+        loginWindowContainer.add(usernameText);
+        loginWindowContainer.add(loginIcon);
     }
 
     private function keyPressCallback(text:String, action:String):Void {
@@ -417,53 +448,56 @@ class LoginMenuState extends MusicBeatState {
     }
 
     private function validateLogin():Void {
-        if (selectedUser == "newUser" && createNewUser) {
-            // Handle new user creation
-            if (usernameField != null && usernameField.text.length > 0 && passwordField.text.length > 0) {
-                ClientPrefs.data.userCreatedName = usernameField.text;
-                ClientPrefs.data.userCreatedPassword = passwordField.text;
-                ClientPrefs.data.userCreatedIcon = "default"; // Set default icon for new user
-                ClientPrefs.data.needToCreateNewUser = false;
-                ClientPrefs.saveSettings();
+        if (selectedUser == "newUser" && isNewUserRequired) {
+            ClientPrefs.data.userCreatedName = usernameField.text;
+            ClientPrefs.data.userCreatedPassword = passwordField.text;
+            ClientPrefs.data.userCreatedIcon = "default";
+            ClientPrefs.data.needToCreateNewUser = false;
+            ClientPrefs.saveSettings();
                 
-                // Transition to main menu or next state
-                FlxG.sound.play(Paths.sound('confirmMenu'));
-                // Add your transition code here
-            } else {
-                FlxG.sound.play(Paths.sound('cancelMenu'));
-            }
+            FlxG.sound.play(Paths.sound('confirmMenu'));
+            LoadingState.loadAndSwitchState(new DesktopState());
         } else {
-            // Handle existing user login
-            var credentials:CharacterCredentials = selectedUser == ClientPrefs.data.userCreatedIcon ? 
-                { username: ClientPrefs.data.userCreatedName, password: ClientPrefs.data.userCreatedPassword, icon: ClientPrefs.data.userCreatedIcon } :
-                USER_CREDENTIALS[selectedUser];
+            var userPassword:String = selectedUser == ClientPrefs.data.userCreatedIcon ?
+            ClientPrefs.data.userCreatedPassword:
+            USER_CREDENTIALS[selectedUser].password;
 
-            if (passwordField.text == credentials.password) {
+            if (passwordField.text == userPassword) {
                 FlxG.sound.play(Paths.sound('confirmMenu'));
-                    // Add your successful login transition code here
-                trace("Logging in as " + credentials.username);
+                LoadingState.loadAndSwitchState(new DesktopState());
             } else {
                 FlxG.sound.play(Paths.sound('cancelMenu'));
-                trace("Incorrect password");
-                    // Optionally show error message
             }
         }
     }
     
     private function closeFunction():Void {
-        loginGroup.clear();
-        loginGroup.setPosition(0, 0);
-        loginWindowOpen = false;
-        selectedUser = "";
+        FlxTween.tween(loginWindowContainer.scale, {x: 0.5, y: 0.5}, 0.2, {
+            ease: FlxEase.backIn
+        });
+        
+        FlxTween.tween(loginWindowContainer, {
+            alpha: 0,
+            x: loginWindowContainer.x + (loginWindowContainer.width * 0.25),
+            y: loginWindowContainer.y + (loginWindowContainer.height * 0.25)
+        }, 0.2, {
+            ease: FlxEase.quartIn,
+            onComplete: function(tween:FlxTween) {
+                loginWindowContainer.clear();
+                loginWindowContainer.setPosition(0, 0);
+                isLoginWindowVisible = false;
+                selectedUser = "";
 
-        if (passwordField != null) {
-            passwordField.text = "";
-        }
-    
-        if (usernameField != null) {
-            usernameField.text = "";
-            usernameField = null;
-        }
+                if (passwordField != null) {
+                    passwordField.text = "";
+                }
+            
+                if (usernameField != null) {
+                    usernameField.text = "";
+                    usernameField = null;
+                }
+            }
+        });
     }
 
     override function beatHit() {
@@ -472,7 +506,7 @@ class LoginMenuState extends MusicBeatState {
         var floatInt:Int = floatUp ? 1 : -1;
 
         for (i in 0...4) {
-            var icon:FlxSprite = cast userIconButtons.members[i];
+            var icon:FlxSprite = cast userIcons.members[i];
             var username:FlxText = cast usernameGroup.members[i];
             icon.y += floatInt;
             username.y += floatInt;
@@ -480,21 +514,26 @@ class LoginMenuState extends MusicBeatState {
 
         floatUp = !floatUp;
 
+        var cloudDirections:Array<Int> = [for (i in 0...foregroundCloudGroup.length) FlxG.random.int(0, 2)];
+        var CLOUD_SPEED:Float = 1.0;
+
         for (i in 0...foregroundCloudGroup.length) {
             var cloud:FlxSprite = cast foregroundCloudGroup.members[i];
             if (!cloud.isOnScreen()) {
                 cloud.x = -cloud.width + 1;
+
+                cloudDirections[i] = FlxG.random.int(0, 2);
             }
             
-            switch (FlxG.random.int(0, 3)) {
+            switch (cloudDirections[i]) {
                 case 0:
-                    cloud.y += 1;
-                    cloud.x += 1;
+                    cloud.y += CLOUD_SPEED;
+                    cloud.x += CLOUD_SPEED;
                 case 1:
-                    cloud.y -= 1;
-                    cloud.x += 1;
+                    cloud.y -= CLOUD_SPEED;
+                    cloud.x += CLOUD_SPEED;
                 case 2:
-                    cloud.x += 1;
+                    cloud.x += CLOUD_SPEED;
             }
         }
     }
@@ -507,3 +546,22 @@ class LoginMenuState extends MusicBeatState {
         });
     }
 }
+
+/*
+
+    private function resetUserSettings():Void {
+        ClientPrefs.data.needToCreateNewUser = true;
+        ClientPrefs.data.userCreatedName = "";
+        ClientPrefs.data.userCreatedPassword = "";
+        ClientPrefs.data.userCreatedIcon = "default";
+        ClientPrefs.saveSettings();
+        
+        FlxG.sound.play(Paths.sound('confirmMenu'));
+        
+        remove(interfaceElements);
+        remove(userIcons);
+        remove(usernameGroup);
+        renderLoginMenu();
+    }
+
+*/
