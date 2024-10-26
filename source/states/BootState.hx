@@ -9,16 +9,17 @@ import shaders.CRTShader;
 import openfl.filters.ShaderFilter;
 
 class BootState extends MusicBeatState {
-    public var vcr:CRTShader;
+    public var crtShader:CRTShader;
 
     public static var muteKeys:Array<FlxKey> = [FlxKey.ZERO];
     public static var volumeDownKeys:Array<FlxKey> = [FlxKey.NUMPADMINUS, FlxKey.MINUS];
     public static var volumeUpKeys:Array<FlxKey> = [FlxKey.NUMPADPLUS, FlxKey.PLUS];
 
-    public static var initCrash:Bool;
-    public static var initBios:Bool = true;
+    public static var initialized:Bool = false;
+    public static var shouldCrashOnBoot:Bool;
+    public static var canEnterBios:Bool = true;
 
-    public static var logoInt:Int = FlxG.random.int(1, 3);
+    public static var logoVariant:Int = FlxG.random.int(1, 3);
 
     override public function create():Void {
         Paths.clearStoredMemory();
@@ -28,8 +29,13 @@ class BootState extends MusicBeatState {
         FlxG.keys.preventDefaultKeys = [TAB];
 
         super.create();
+
         loadPreferences();
-        setupBootText();
+
+        crtShader = new CRTShader(0.35, 0.75);
+        FlxG.camera.setFilters([new ShaderFilter(crtShader)]);
+
+        initBootSequence();
     }
 
     private function loadPreferences():Void {
@@ -37,56 +43,28 @@ class BootState extends MusicBeatState {
         ClientPrefs.loadPrefs();
         Highscore.load();
 
-        if (FlxG.save.data != null && FlxG.save.data.fullscreen) {
-            FlxG.fullscreen = FlxG.save.data.fullscreen;
+        if (!initialized) {
+            if (FlxG.save.data != null && FlxG.save.data.fullscreen) {
+                FlxG.fullscreen = FlxG.save.data.fullscreen;
+            }
+            persistentUpdate = true;
+            persistentDraw = true;
         }
-
-        persistentUpdate = true;
-        persistentDraw = true;
 
         if (FlxG.save.data.weekCompleted != null) {
             StoryMenuState.weekCompleted = FlxG.save.data.weekCompleted;
         }
     }
 
-    private function setupBootText():Void {
-        vcr = new CRTShader(0.35, 0.75);
-        FlxG.camera.setFilters([new ShaderFilter(vcr)]);
+    private function initBootSequence():Void {
+
         FlxG.sound.play(Paths.sound('bootup'));
 
         var bootTextGroup:FlxGroup = new FlxGroup();
         add(bootTextGroup);
 
         var currentDate:String = Date.now().toString();
-        var bootText:Array<String> = getBootText(currentDate);
-        var colors:Array<UInt> = getBootTextColors();
-
-        var yPos:Int = 5;
-        var delay:Float = 0;
-
-        if (FlxG.random.float(0, 1) < 0.05) initCrash = true;
-
-        for (i in 0...bootText.length) {
-            var text:FlxText = new FlxText(10, yPos, bootText[i]).setFormat(null, 8, colors[i]);
-            yPos += (i == 0 || i == 14 || i == 15 || i == 16) ? 30 : 10;
-            delay += FlxG.random.float(0.1, 0.3);
-            new FlxTimer().start(delay, function(timer:FlxTimer):Void {
-                bootTextGroup.add(text);
-            });
-        }
-
-        var enterBIOSText:FlxText = new FlxText(10, FlxG.height - 30, "Press <DEL> to enter SETUP").setFormat(null, 8, FlxColor.YELLOW);
-        bootTextGroup.add(enterBIOSText);
-
-        new FlxTimer().start(delay + 0.5, function(timer:FlxTimer):Void {
-            initBios = false;
-            remove(bootTextGroup);
-            showLogoAndTransition();
-        });
-    }
-
-    private function getBootText(currentDate:String):Array<String> {
-        return [
+        var bootText:Array<String> = [
             'Yo, yo, yo! Bootin\' up this funky fresh system!\n${currentDate}',
             "scanning for funky fresh beats...",
             "warming up microphones...",
@@ -119,10 +97,7 @@ class BootState extends MusicBeatState {
             "start ... kickin' it off",
             "storage ... all packed up",
         ];
-    }
-
-    private function getBootTextColors():Array<UInt> {
-        return [
+        var colors:Array<UInt> = [
             FlxColor.YELLOW,
             FlxColor.WHITE,
             FlxColor.WHITE,
@@ -155,10 +130,35 @@ class BootState extends MusicBeatState {
             FlxColor.WHITE,
             FlxColor.WHITE
         ];
+
+        var yPos:Int = 5;
+        var delay:Float = 0;
+
+        if (FlxG.random.float(0, 1) < 0.05)
+            shouldCrashOnBoot = true;
+
+        for (i in 0...bootText.length) {
+            var text:FlxText = new FlxText(10, yPos, bootText[i]).setFormat(null, 8, colors[i]);
+            yPos += (i == 0 || i == 14 || i == 15 || i == 16) ? 30 : 10;
+            delay += FlxG.random.float(0.1, 0.3);
+            new FlxTimer().start(delay, function(timer:FlxTimer):Void {
+                bootTextGroup.add(text);
+            });
+        }
+
+        var enterBIOSText:FlxText = new FlxText(10, FlxG.height - 30, "Press <DEL> to enter SETUP");
+        enterBIOSText.setFormat(null, 8, FlxColor.YELLOW);
+        bootTextGroup.add(enterBIOSText);
+
+        new FlxTimer().start(delay + 0.5, (_) -> {
+            canEnterBios = false;
+            remove(bootTextGroup);
+            showLogoAndTransition();
+        });
     }
 
     private function showLogoAndTransition():Void {
-        var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logo/friendzonedLogo${logoInt}'));
+        var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logos/friendzonedLogo${logoVariant}'));
         friendzonedLogo.screenCenter(XY);
         add(friendzonedLogo);
 
@@ -168,7 +168,7 @@ class BootState extends MusicBeatState {
         var copyrightText:FlxText = new FlxText(10, FlxG.height - 30, '@ 1993 Friendzoned Electronics Inc. All rights reserved.', 7);
         add(copyrightText);
 
-        new FlxTimer().start(5, function(timer:FlxTimer) {
+        new FlxTimer().start(5, (_) -> {
             LoadingState.loadAndSwitchState(new LoginState());
         });
     }
@@ -179,7 +179,7 @@ class BootState extends MusicBeatState {
 
         super.update(elapsed);
 
-        if (initBios && (FlxG.keys.justPressed.DELETE || FlxG.keys.justPressed.BACKSPACE)) {
+        if (canEnterBios && (FlxG.keys.justPressed.DELETE || FlxG.keys.justPressed.BACKSPACE)) {
             LoadingState.loadAndSwitchState(new BiosState());
         }
     }
