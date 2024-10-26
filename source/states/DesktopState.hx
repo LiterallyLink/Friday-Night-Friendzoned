@@ -9,38 +9,47 @@ import flixel.math.FlxRect;
 
 import shaders.CRTShader;
 import openfl.filters.ShaderFilter;
+import flixel.addons.transition.FlxTransitionableState;
+
+import substates.MinecraftLauncherSubState;
 
 class DesktopState extends MusicBeatState
 {
+    private static inline var BUTTON_PADDING:Int = 5;
+
     public var shader:CRTShader;
+    public var iconList:Array<ApplicationButton> = [];
 
 	override function create()
 	{	
         var desktopTheme:String = ClientPrefs.data.desktopTheme;
 
+        FlxTransitionableState.skipNextTransIn = true;
+        persistentUpdate = true;
+        persistentDraw = true;
+
         shader = new CRTShader(0.3, 0.55);
         FlxG.camera.setFilters([new ShaderFilter(shader)]);
-
         FlxG.mouse.visible = true;
         FlxG.mouse.useSystemCursor = true;
 
         FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
         
         var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/bgs/${desktopTheme}'));
-        add(desktopBg);
-
         var taskbar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/taskbar'));
         taskbar.y = FlxG.height - taskbar.height;
+
+        add(desktopBg);
         add(taskbar);
 
-        var startButton = new FlxButton(5, 0, null, function() {
+        var startButton = new FlxButton(BUTTON_PADDING, () -> {
             // FlxG.switchState(new StartMenuState());
         });
         startButton.loadGraphic(Paths.image('desktop/icons/start'));
         startButton.y = taskbar.y + (taskbar.height / 2) - (startButton.height / 2);
         add(startButton);
 
-        var photoAlbumButton = new FlxButton(0, 0, null, function() {
+        var photoAlbumButton = new FlxButton(() -> {
             // FlxG.switchState(new PhotoAlbumState());
         });
         photoAlbumButton.loadGraphic(Paths.image('desktop/icons/photo_album'));
@@ -48,7 +57,7 @@ class DesktopState extends MusicBeatState
         photoAlbumButton.x = (startButton.width * 2) - (photoAlbumButton.width / 2);
         add(photoAlbumButton);
 
-        var musicPlayerButton = new FlxButton(0, 0, null, function() {
+        var musicPlayerButton = new FlxButton(() -> {
             // FlxG.switchState(new MusicPlayerState());
         });
         musicPlayerButton.loadGraphic(Paths.image('desktop/icons/music_player'));
@@ -66,17 +75,14 @@ class DesktopState extends MusicBeatState
 
         var desktopBounds = new FlxRect(0, 0, FlxG.width, FlxG.height - taskbar.height);
 
-        var creditsButton = new ApplicationButton(30, 30, "Credits.txt", 'desktop/icons/notes', desktopBounds,
-            () -> {
-                // Credits Application
-            });
-        add(creditsButton);
-
-        var minecraftButton = new ApplicationButton(60, 60, "Minecraft", 'desktop/icons/mc', desktopBounds,
-            () -> {
-                // Minecraft Application
-            });
-        add(minecraftButton);
+        var appRecyclingBin = new ApplicationButton(30, 500, "desktop/icons/recycle_bin_empty", "Recycling Bin", desktopBounds);
+        var appCredits = new ApplicationButton(30, 30, "desktop/icons/sticky_note", 'Credits.txt', desktopBounds);
+        var appMinecraft = new ApplicationButton(200, 200, 'desktop/icons/mc', 'Minecraft', desktopBounds, MinecraftLauncherSubState);
+        appMinecraft.setScale(0.8);
+        
+        add(appRecyclingBin);
+        add(appCredits);
+        add(appMinecraft);
 	}
 
 	override function destroy()
