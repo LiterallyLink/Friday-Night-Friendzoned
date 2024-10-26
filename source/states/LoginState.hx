@@ -242,7 +242,7 @@ class LoginState extends MusicBeatState {
         remove(userIcons);
         remove(usernameGroup);
 
-        var logo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logo/friendzonedLoadingLogo${BootState.logoInt}'));
+        var logo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logos/friendzonedLoadingLogo${BootState.logoVariant}'));
         logo.screenCenter(XY);
         add(logo);
 
