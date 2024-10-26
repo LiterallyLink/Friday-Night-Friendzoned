@@ -15,25 +15,21 @@ class BootState extends MusicBeatState {
     public static var volumeDownKeys:Array<FlxKey> = [FlxKey.NUMPADMINUS, FlxKey.MINUS];
     public static var volumeUpKeys:Array<FlxKey> = [FlxKey.NUMPADPLUS, FlxKey.PLUS];
 
-    public static var initialized:Bool = false;
     public static var initCrash:Bool;
     public static var initBios:Bool = true;
 
     public static var logoInt:Int = FlxG.random.int(1, 3);
 
     override public function create():Void {
-        initializeSettings();
-        super.create();
-        loadPreferences();
-        setupBootText();
-    }
-
-    private function initializeSettings():Void {
         Paths.clearStoredMemory();
         FlxG.mouse.visible = false;
         FlxG.fixedTimestep = false;
         FlxG.game.focusLostFramerate = 60;
         FlxG.keys.preventDefaultKeys = [TAB];
+
+        super.create();
+        loadPreferences();
+        setupBootText();
     }
 
     private function loadPreferences():Void {
@@ -41,13 +37,12 @@ class BootState extends MusicBeatState {
         ClientPrefs.loadPrefs();
         Highscore.load();
 
-        if (!initialized) {
-            if (FlxG.save.data != null && FlxG.save.data.fullscreen) {
-                FlxG.fullscreen = FlxG.save.data.fullscreen;
-            }
-            persistentUpdate = true;
-            persistentDraw = true;
+        if (FlxG.save.data != null && FlxG.save.data.fullscreen) {
+            FlxG.fullscreen = FlxG.save.data.fullscreen;
         }
+
+        persistentUpdate = true;
+        persistentDraw = true;
 
         if (FlxG.save.data.weekCompleted != null) {
             StoryMenuState.weekCompleted = FlxG.save.data.weekCompleted;
@@ -163,7 +158,7 @@ class BootState extends MusicBeatState {
     }
 
     private function showLogoAndTransition():Void {
-        var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('friendzonedLogo${logoInt}'));
+        var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logo/friendzonedLogo${logoInt}'));
         friendzonedLogo.screenCenter(XY);
         add(friendzonedLogo);
 
@@ -174,7 +169,7 @@ class BootState extends MusicBeatState {
         add(copyrightText);
 
         new FlxTimer().start(5, function(timer:FlxTimer) {
-            LoadingState.loadAndSwitchState(new LoginMenuState());
+            LoadingState.loadAndSwitchState(new LoginState());
         });
     }
 
