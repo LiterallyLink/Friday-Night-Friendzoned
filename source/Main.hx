@@ -1,6 +1,7 @@
 package;
 
 import states.BootState;
+import states.DesktopState;
 #if android
 import android.content.Context;
 #end
