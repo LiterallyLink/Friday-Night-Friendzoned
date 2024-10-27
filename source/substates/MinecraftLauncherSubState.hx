@@ -9,14 +9,14 @@ import flixel.group.FlxSpriteContainer;
 class MinecraftLauncherSubState extends MusicBeatSubstate
 {
     private static final PADDING:Int = 4;
-    private static final BUTTON_SPACING:Int = 2;
-    private static final DIFFICULTIES:Array<String> = ["Peaceful", "Easy", "Normal", "Hard", "Hardcore"];
+
+    public static final DIFFICULTIES:Array<String> = ["Peaceful", "Normal", "Hardcore"];
+    private static var difficultyIndex = 0;
+    public var difficultyButton:FlxButton;
 
     private var window:FlxSpriteContainer;
+    public var backdrop:FlxSprite;
     private var header:FlxButton;
-
-    private var difficultyButton:FlxButton;
-    private var difficultyIndex:Int = 0;
 
     private var isDragging:Bool = false;
     private var dragOffset:FlxPoint = new FlxPoint();
@@ -31,22 +31,83 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
 	override public function create():Void 
 	{
         super.create();
+        createWindow();
 
-        window = new FlxSpriteContainer();
-
-        var backdrop:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_window'));
-        backdrop.screenCenter(XY);
-        window.add(backdrop);
-
-        header = new FlxButton(backdrop.x + PADDING, backdrop.y + PADDING);
+        header = new FlxButton();
         header.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_header'));
+        header.setPosition(
+            backdrop.x + PADDING,
+            backdrop.y + PADDING
+        );
         window.add(header);
 
-        var icon:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_icon'));
-        icon.x = header.x + PADDING;
-        icon.y = header.y + (header.height - icon.height) / 2;
-        window.add(icon);
+        var launcherIcon:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_icon'));
+        launcherIcon.setPosition(
+            backdrop.x + (launcherIcon.width / 2),
+            (backdrop.y + launcherIcon.height / 2) - 1
+        );
+        window.add(launcherIcon);
 
+        var launcherTitle:FlxText = new FlxText("Minecraft", 10);
+        launcherTitle.setPosition(
+            launcherIcon.x + launcherIcon.width + PADDING,
+            launcherIcon.y + (launcherIcon.height / 2) - (launcherTitle.height / 2)
+        );
+        window.add(launcherTitle);
+
+        var worlds = [
+            { name:"Farlands", dateCreated: "(8/13/17, TIME TBA)", mode: "Survival Mode,", version: "1.7.3", image: "mc_level_farlands"},
+            { name: "N.T.T", dateCreated: "(DATE TBA, TIME TBA)", mode: "Survival Mode,", version: "1.20.6", image: "mc_level_entities"}
+        ];
+
+        var xPos = backdrop.x + (launcherIcon.width / 2) + PADDING;
+        var yPos = backdrop.y + (19 + PADDING) * 2;
+
+        for (i in 0...worlds.length) {
+            var world = worlds[i];
+
+            var worldButton = new FlxButton(() -> {
+                FlxG.sound.play(Paths.sound('minecraft/click'), false);
+            });
+            worldButton.loadGraphic(Paths.image('desktop/applications/minecraft/${world.image}'));
+            worldButton.setPosition(xPos, yPos);
+            window.add(worldButton);
+
+            var worldName = new FlxText(worldButton.x + worldButton.width + PADDING, worldButton.y, world.name);
+            window.add(worldName);
+            
+            var worldInfo = new FlxText(
+                worldName.x,
+                worldName.y + worldName.height - PADDING,
+                '${world.name} ${world.dateCreated}\n${world.mode} Version: ${world.version}'
+            );
+            worldInfo.setFormat(10, FlxColor.GRAY);
+                
+            window.add(worldInfo);
+
+            yPos += (worldButton.height * 1.5) + PADDING;
+            worldButton.width = 360;
+        }
+
+        var playButton = new FlxButton("Play Selected World", () -> {
+            FlxG.sound.play(Paths.sound('minecraft/click'), false);
+        });
+        playButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
+        playButton.setPosition(
+            backdrop.x + playButton.width,
+            backdrop.y + backdrop.height - (playButton.height * 1.5)
+        );
+        window.add(playButton);
+
+        difficultyButton = new FlxButton('Difficulty: ${DIFFICULTIES[difficultyIndex]}', cycleDifficulty);
+        difficultyButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
+        difficultyButton.setPosition(
+            playButton.x + difficultyButton.width + (PADDING * 2),
+            backdrop.y + backdrop.height - (difficultyButton.height * 1.5)
+        );
+        window.add(difficultyButton);
+
+        /*
         var xButton:FlxButton = new FlxButton(() -> {
             close();
         });
@@ -55,7 +116,6 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             backdrop.x + backdrop.width - xButton.width - 5,
             backdrop.y + 5
         );
-        window.add(xButton);
 
         var fullscreenButton:FlxButton = new FlxButton(() -> {
             // FlxG.switchState(new MinecraftLauncherSubState());
@@ -65,7 +125,6 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             xButton.x - fullscreenButton.width - 2,
             xButton.y
         );
-        window.add(fullscreenButton);
 
         var minimizeButton:FlxButton = new FlxButton(() -> {
             // FlxG.switchState(new MinecraftLauncherSubState());
@@ -75,44 +134,16 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             fullscreenButton.x - minimizeButton.width - 2,
             xButton.y
         );
-        window.add(minimizeButton);
-
-        var title:FlxText = new FlxText("Minecraft Launcher", 10);
-        title.setPosition(
-            icon.x + icon.width + PADDING,
-            header.y + (header.height - title.height) / 2
-        );
-        window.add(title);
-
-        var logo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/mc_logo'));
-        logo.setPosition(
-            backdrop.x + (logo.width / 4),
-            backdrop.y + backdrop.height - (logo.height * 2)
-        );
-        window.add(logo);
-
-        var launchButton:FlxButton = new FlxButton("Play Selected World", () -> {
-            FlxG.sound.play(Paths.sound('minecraft/click'), false);
-        });
-        launchButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
-        launchButton.setPosition(
-            logo.x + logo.width + (PADDING * 2),
-            logo.y + (logo.height / 2) - (launchButton.height / 2)
-        );
-        launchButton.label.setFormat(Paths.font("Minecraft.ttf"), 10, FlxColor.WHITE);
-        window.add(launchButton);
-
-        difficultyButton = new FlxButton("Difficulty:" + DIFFICULTIES[difficultyIndex], cycleDifficulty);
-        difficultyButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
-        difficultyButton.setPosition(
-            launchButton.x + launchButton.width + (PADDING * 2),
-            launchButton.y
-        );
-        difficultyButton.label.setFormat(Paths.font("Minecraft.ttf"), 10, FlxColor.WHITE);
-        window.add(difficultyButton);
-        
+        */
         add(window);
 	}
+
+    private function createWindow():Void {
+        window = new FlxSpriteContainer();
+        backdrop = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/launcher_window'));
+        backdrop.screenCenter(XY);
+        window.add(backdrop);
+    }
 
     override function update(elapsed:Float) {
         super.update(elapsed);
