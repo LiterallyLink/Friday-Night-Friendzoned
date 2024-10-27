@@ -8,6 +8,7 @@ import flixel.text.FlxText;
 import flixel.group.FlxSpriteContainer;
 import flixel.addons.ui.FlxInputText;
 import flixel.math.FlxPoint;
+
 import states.LoginState;
 import states.DesktopState;
 
@@ -15,7 +16,6 @@ class LoginWindowSubState extends FlxSubState {
     private var loginWindowContainer:FlxSpriteContainer = new FlxSpriteContainer();
     private var passwordField:FlxInputText;
     private var usernameField:FlxInputText;
-    private var okBtn:FlxButton;
     private var loginHeader:FlxSprite;
     private var loginWindow:FlxSprite;
 
@@ -23,6 +23,8 @@ class LoginWindowSubState extends FlxSubState {
     private var dragOffset:FlxPoint = new FlxPoint();
     private var selectedUser:String;
     private var isNewUserRequired:Bool;
+
+    private var okBtn:FlxButton;
 
     public function new(selectedUser:String, isNewUserRequired:Bool) {
         super();
@@ -50,6 +52,10 @@ class LoginWindowSubState extends FlxSubState {
 
     override function update(elapsed:Float) {
         super.update(elapsed);
+
+        if (FlxG.keys.justPressed.ESCAPE) {
+            close();
+        }
         
         if (FlxG.mouse.justPressed && loginHeader.overlapsPoint(FlxG.mouse.getPosition())) {
             isWindowBeingDragged = true;
@@ -83,7 +89,7 @@ class LoginWindowSubState extends FlxSubState {
         var buttonPadding:Int = 15;
         var xBtnPadding:Int = 10;
 
-        var cancelBtn:FlxButton = new FlxButton(0, 0, function() {
+        var cancelBtn:FlxButton = new FlxButton(0, 0, () -> {
             close();
         });
         cancelBtn.loadGraphic(Paths.image('menulogin/login_cancel'));
@@ -92,14 +98,14 @@ class LoginWindowSubState extends FlxSubState {
             (loginWindow.y + loginWindow.height) - (cancelBtn.height + buttonPadding)
         );
     
-        okBtn = new FlxButton(0, 0, function() {});
+        okBtn = new FlxButton(0, 0, () -> {});
         okBtn.loadGraphic(Paths.image('menulogin/login_dimmed_ok'));
         okBtn.setPosition(
             cancelBtn.x - (okBtn.width + buttonPadding),
             cancelBtn.y
         );
     
-        var xBtn:FlxButton = new FlxButton(0, 0, function() {
+        var xBtn:FlxButton = new FlxButton(0, 0, () -> {
             close();
         });
         xBtn.loadGraphic(Paths.image('menulogin/login_x'));
@@ -114,18 +120,21 @@ class LoginWindowSubState extends FlxSubState {
     }
 
     private function initLoginInputFields() {
-        var MAX_FIELD_LENGTH:Int = 10;
+        var MAX_FIELD_LENGTH:Int = 14;
         var EREG_PATTERN = new EReg("[^a-zA-Z0-9]", "g");
         var FONT_SIZE:Int = 17;
+        var FIELD_WIDTH:Int = 350;
+
+        var xPos:Int = 510;
     
-        passwordField = new FlxInputText(510, 410, 350, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
+        passwordField = new FlxInputText(xPos, 410, FIELD_WIDTH, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
         passwordField.callback = keyPressCallback;
         passwordField.customFilterPattern = EREG_PATTERN;
         passwordField.maxLength = MAX_FIELD_LENGTH;
         loginWindowContainer.add(passwordField);
             
         if (selectedUser == "newUser" && isNewUserRequired) {
-            usernameField = new FlxInputText(510, 368, 350, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
+            usernameField = new FlxInputText(xPos, 368, FIELD_WIDTH, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
             usernameField.callback = keyPressCallback;
             usernameField.customFilterPattern = EREG_PATTERN;
             usernameField.maxLength = MAX_FIELD_LENGTH;    
