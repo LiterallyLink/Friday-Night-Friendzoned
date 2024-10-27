@@ -47,6 +47,7 @@ class BootState extends MusicBeatState {
             if (FlxG.save.data != null && FlxG.save.data.fullscreen) {
                 FlxG.fullscreen = FlxG.save.data.fullscreen;
             }
+
             persistentUpdate = true;
             persistentDraw = true;
         }
@@ -57,99 +58,66 @@ class BootState extends MusicBeatState {
     }
 
     private function initBootSequence():Void {
-
         FlxG.sound.play(Paths.sound('bootup'));
-
+    
         var bootTextGroup:FlxGroup = new FlxGroup();
         add(bootTextGroup);
-
+    
         var currentDate:String = Date.now().toString();
-        var bootText:Array<String> = [
-            'Yo, yo, yo! Bootin\' up this funky fresh system!\n${currentDate}',
-            "scanning for funky fresh beats...",
-            "warming up microphones...",
-            "loading audio tracks...",
-            "calibrating rhythm sensors...",
-            "initializing arrow inputs...",
-            "positioning hitboxes...",
-            "preparing funky.env...",
-            "checking for groove modules...",
-            "synchronizing funk levels...",
-            "adjusting menus and options...",
-            "applying latest patches...",
-            "optimizing girlfriend's ass...",
-            "searching for secret levels...",
-            "compiling funky engine...",
-            "WARNING: Friendzoned93 has not yet been tested on your device.\nUse latest FriendzonedOS or Groovium for a better experience !",
-            "Friendzoned93 v2.4.7 booting up...",
-            "bios ... ready to jam",
-            "settings ... set and fresh",
-            "modules ... locked and loaded",
-            "desktop ... lookin' fly",
-            "audio ... bumpin' loud",
-            "boot ... startin' strong",
-            "apps ... ready to rock",
-            "utils ... geared up",
-            "upgrade ... primed",
-            "config ... configured to the max !",
-            "exe ... executable excellence",
-            "explorer ... navigatin' like a boss",
-            "start ... kickin' it off",
-            "storage ... all packed up",
+        var bootMessages:Array<{text:String, color:UInt}> = [
+            {text: 'Yo, yo, yo! Bootin\' up this funky fresh system!\n${currentDate}', color: FlxColor.YELLOW},
+            {text: "scanning for funky fresh beats...", color: FlxColor.WHITE},
+            {text: "warming up microphones...", color: FlxColor.WHITE},
+            {text: "loading audio tracks...", color: FlxColor.WHITE},
+            {text: "calibrating rhythm sensors...", color: FlxColor.WHITE},
+            {text: "initializing arrow inputs...", color: FlxColor.WHITE},
+            {text: "positioning hitboxes...", color: FlxColor.WHITE},
+            {text: "preparing funky.env...", color: FlxColor.WHITE},
+            {text: "checking for groove modules...", color: FlxColor.WHITE},
+            {text: "synchronizing funk levels...", color: FlxColor.WHITE},
+            {text: "adjusting menus and options...", color: FlxColor.WHITE},
+            {text: "applying latest patches...", color: FlxColor.WHITE},
+            {text: "optimizing girlfriend's ass...", color: FlxColor.WHITE},
+            {text: "searching for secret levels...", color: FlxColor.WHITE},
+            {text: "compiling funky engine...", color: FlxColor.WHITE},
+            {text: "WARNING: Friendzoned93 has not yet been tested on your device.\nUse latest FriendzonedOS or Groovium for a better experience !", color: 0xFFE21142},
+            {text: "Friendzoned93 v2.4.7 booting up...", color: FlxColor.YELLOW},
+            {text: "bios ... ready to jam", color: FlxColor.WHITE},
+            {text: "settings ... set and fresh", color: FlxColor.WHITE},
+            {text: "modules ... locked and loaded", color: FlxColor.WHITE},
+            {text: "desktop ... lookin' fly", color: FlxColor.WHITE},
+            {text: "audio ... bumpin' loud", color: FlxColor.WHITE},
+            {text: "boot ... startin' strong", color: FlxColor.WHITE},
+            {text: "apps ... ready to rock", color: FlxColor.WHITE},
+            {text: "utils ... geared up", color: FlxColor.WHITE},
+            {text: "upgrade ... primed", color: FlxColor.WHITE},
+            {text: "config ... configured to the max !", color: FlxColor.WHITE},
+            {text: "exe ... executable excellence", color: FlxColor.WHITE},
+            {text: "explorer ... navigatin' like a boss", color: FlxColor.WHITE},
+            {text: "start ... kickin' it off", color: FlxColor.WHITE},
+            {text: "storage ... all packed up", color: FlxColor.WHITE}
         ];
-        var colors:Array<UInt> = [
-            FlxColor.YELLOW,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            0xFFE21142,
-            FlxColor.YELLOW,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE,
-            FlxColor.WHITE
-        ];
-
+    
         var yPos:Int = 5;
         var delay:Float = 0;
-
+    
         if (FlxG.random.float(0, 1) < 0.05)
             shouldCrashOnBoot = true;
-
-        for (i in 0...bootText.length) {
-            var text:FlxText = new FlxText(10, yPos, bootText[i]).setFormat(null, 8, colors[i]);
+    
+        for (i in 0...bootMessages.length) {
+            var message = bootMessages[i];
+            var text:FlxText = new FlxText(10, yPos, message.text).setFormat(null, 8, message.color);
             yPos += (i == 0 || i == 14 || i == 15 || i == 16) ? 30 : 10;
             delay += FlxG.random.float(0.1, 0.3);
             new FlxTimer().start(delay, function(timer:FlxTimer):Void {
                 bootTextGroup.add(text);
             });
         }
-
+    
         var enterBIOSText:FlxText = new FlxText(10, FlxG.height - 30, "Press <DEL> to enter SETUP");
         enterBIOSText.setFormat(null, 8, FlxColor.YELLOW);
         bootTextGroup.add(enterBIOSText);
-
+    
         new FlxTimer().start(delay + 0.5, (_) -> {
             canEnterBios = false;
             remove(bootTextGroup);
