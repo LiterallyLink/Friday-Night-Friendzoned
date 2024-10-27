@@ -28,20 +28,13 @@ class ApplicationButton extends FlxSpriteGroup
     private var _wasDragged:Bool = false;
 
     private var boundsTween:FlxTween;
+    private var scaleTween:FlxTween;
 
     public static inline var DEFAULT_FONT_SIZE:Int = 10;
     public static inline var DEFAULT_LABEL_PADDING:Int = 0;
     public static inline var BOUNDS_SNAP_DURATION:Float = 0.3;
-    /**
-     * Creates a new `ApplicationButton` with an optional image and label.
-     * 
-     * @param   X           The initial X position of the button.
-     * @param   Y           The initial Y position of the button.
-     * @param   ImagePath   Optional path to the button's image asset.
-     * @param   LabelText   Optional text to display below the button.
-     * @param   Bounds      Optional bounds for the button to snap to.
-     * @param   SubstateClass   Optional substate class to open on double click.
-     */
+    public static inline var SCALE_TWEEN_DURATION:Float = 0.2;
+
     public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?SubstateClass:Class<FlxSubState>)
     {
         super(X, Y);
@@ -60,32 +53,38 @@ class ApplicationButton extends FlxSpriteGroup
 
     private function setupMouseEvents():Void
     {
-        // Only use FlxMouseEvent for down, over, and out
         FlxMouseEvent.add(_button, onMouseDown, null, onMouseOver, onMouseOut);
-        
-        // Global mouse events for move and up
+        FlxMouseEvent.setMouseDoubleClickCallback(_button, onDoubleClick);
+    }
+
+    private function startDragging():Void
+    {
         FlxG.stage.addEventListener(openfl.events.MouseEvent.MOUSE_MOVE, onMouseMove);
         FlxG.stage.addEventListener(openfl.events.MouseEvent.MOUSE_UP, onGlobalMouseUp);
-        
-        // Double click handling
-        FlxMouseEvent.setMouseDoubleClickCallback(_button, onDoubleClick);
+    }
+
+    private function stopDragging():Void
+    {
+        FlxG.stage.removeEventListener(openfl.events.MouseEvent.MOUSE_MOVE, onMouseMove);
+        FlxG.stage.removeEventListener(openfl.events.MouseEvent.MOUSE_UP, onGlobalMouseUp);
+        tweenScale(1.0);
     }
 
     private function onMouseDown(sprite:FlxSprite):Void
     {
-        trace("Mouse down");
         _isDragging = true;
         _wasDragged = false;
         _startPosition.set(x, y);
         _dragOffset.set(FlxG.mouse.x - x, FlxG.mouse.y - y);
+        startDragging();
     }
     
     private function onGlobalMouseUp(event:openfl.events.MouseEvent):Void
     {
-        trace("Global mouse up");
         if (_isDragging)
         {
             _isDragging = false;
+            stopDragging();
 
             if (_wasDragged && _bounds != null && !isWithinBounds())
             {
@@ -94,36 +93,54 @@ class ApplicationButton extends FlxSpriteGroup
         }
     }
 
-    private function tweenToPosition(targetX:Float, targetY:Float):Void
+    private function tweenScale(targetScale:Float):Void
         {
-            // Cancel any existing tween
-            if (boundsTween != null && boundsTween.active)
+            if (scaleTween != null && scaleTween.active)
             {
-                boundsTween.cancel();
+                scaleTween.cancel();
             }
     
-            // Create new tween
-            boundsTween = FlxTween.tween(this, 
-                { x: targetX, y: targetY }, 
-                BOUNDS_SNAP_DURATION, 
+            scaleTween = FlxTween.tween(_button.scale, 
+                { x: targetScale, y: targetScale }, 
+                SCALE_TWEEN_DURATION,
                 {
-                    ease: FlxEase.elasticOut,
+                    ease: FlxEase.quartOut,
                     onUpdate: function(tween:FlxTween) {
+                        _button.updateHitbox();
                         updateLabelPosition();
                     }
                 }
             );
         }
 
+    private function tweenToPosition(targetX:Float, targetY:Float):Void
+    {
+        if (boundsTween != null && boundsTween.active)
+        {
+            boundsTween.cancel();
+        }
+
+        boundsTween = FlxTween.tween(this, 
+            { x: targetX, y: targetY }, 
+            BOUNDS_SNAP_DURATION, 
+            {
+                ease: FlxEase.elasticOut,
+                onUpdate: function(tween:FlxTween) {
+                    updateLabelPosition();
+                }
+            }
+        );
+    }
+
     private function onMouseMove(event:openfl.events.MouseEvent):Void
     {
-        trace("Mouse move");
-        if (!_isDragging) return;
+        tweenScale(0.8);
 
         if (FlxG.mouse.x < 0 || FlxG.mouse.x > FlxG.width ||
             FlxG.mouse.y < 0 || FlxG.mouse.y > FlxG.height)
         {
             _isDragging = false;
+            stopDragging();
             tweenToPosition(_startPosition.x, _startPosition.y);
             return;
         }
@@ -142,12 +159,12 @@ class ApplicationButton extends FlxSpriteGroup
 
     private function onMouseOver(sprite:FlxSprite):Void
     {
-        // Add hover effects here
+        // Add hover effects
     }
 
     private function onMouseOut(sprite:FlxSprite):Void
     {
-        // Remove hover effects here
+        // Remove hover effects
     }
 
     private function onDoubleClick(sprite:FlxSprite):Void
@@ -158,7 +175,7 @@ class ApplicationButton extends FlxSpriteGroup
             if (currentState != null)
             {
                 _currentSubState = Type.createInstance(_substateCallback, []);
-                _currentSubState.closeCallback = function() {
+                _currentSubState.closeCallback = () -> {
                     _currentSubState = null;
                 };
                 currentState.openSubState(_currentSubState);
@@ -186,11 +203,11 @@ class ApplicationButton extends FlxSpriteGroup
     }
 
     public function setScale(Scale:Float):Void
-        {
-            _button.scale.set(Scale, Scale);
-            _button.updateHitbox();
-            updateLabelPosition();
-        }
+    {
+        _button.scale.set(Scale, Scale);
+        _button.updateHitbox();
+        updateLabelPosition();
+    }
 
     private function initializeLabel(LabelText:String):Void
     {
@@ -210,25 +227,22 @@ class ApplicationButton extends FlxSpriteGroup
     }
 
     override public function destroy():Void
+    {
+        if (boundsTween != null && boundsTween.active)
         {
-            if (boundsTween != null && boundsTween.active)
-            {
-                boundsTween.cancel();
-                boundsTween = null;
-            }
-
-            // Clean up mouse events
-            FlxMouseEvent.remove(_button);
-            FlxG.stage.removeEventListener(openfl.events.MouseEvent.MOUSE_MOVE, onMouseMove);
-            FlxG.stage.removeEventListener(openfl.events.MouseEvent.MOUSE_UP, onGlobalMouseUp);
-            
-            // Clean up resources
-            _dragOffset = FlxDestroyUtil.put( _dragOffset);
-            _startPosition = FlxDestroyUtil.put( _startPosition);
-            _button = FlxDestroyUtil.destroy( _button);
-            _label = FlxDestroyUtil.destroy( _label);
-            _currentSubState = null;
-            
-            super.destroy();
+            boundsTween.cancel();
+            boundsTween = null;
         }
+
+        FlxMouseEvent.remove(_button);
+        stopDragging(); // Ensure we clean up any active listeners
+        
+        _dragOffset = FlxDestroyUtil.put(_dragOffset);
+        _startPosition = FlxDestroyUtil.put(_startPosition);
+        _button = FlxDestroyUtil.destroy(_button);
+        _label = FlxDestroyUtil.destroy(_label);
+        _currentSubState = null;
+        
+        super.destroy();
+    }
 }
