@@ -14,13 +14,13 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
     private static var difficultyIndex = 0;
     public var difficultyButton:FlxButton;
 
-    private var window:FlxSpriteContainer;
+    private var mcLauncher:FlxSpriteContainer;
     public var backdrop:FlxSprite;
     private var header:FlxButton;
 
     private var isDragging:Bool = false;
     private var dragOffset:FlxPoint = new FlxPoint();
-    private var isWindowBeingDragged:Bool = false;
+    private var ismcLauncherBeingDragged:Bool = false;
 
 	public function new()
 	{
@@ -31,36 +31,40 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
 	override public function create():Void 
 	{
         super.create();
-        createWindow();
+        createmcLauncher();
 
         header = new FlxButton();
         header.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_header'));
-        header.setPosition(
-            backdrop.x + PADDING,
-            backdrop.y + PADDING
-        );
-        window.add(header);
+        header.setPosition(backdrop.x + PADDING, backdrop.y + PADDING);
+        mcLauncher.add(header);
 
         var launcherIcon:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_icon'));
         launcherIcon.setPosition(
             backdrop.x + (launcherIcon.width / 2),
             (backdrop.y + launcherIcon.height / 2) - 1
         );
-        window.add(launcherIcon);
+        mcLauncher.add(launcherIcon);
 
         var launcherTitle:FlxText = new FlxText("Minecraft", 10);
         launcherTitle.setPosition(
             launcherIcon.x + launcherIcon.width + PADDING,
             launcherIcon.y + (launcherIcon.height / 2) - (launcherTitle.height / 2)
         );
-        window.add(launcherTitle);
+        mcLauncher.add(launcherTitle);
+
+        var selectWorldText:FlxText = new FlxText("Select World", 10);
+        selectWorldText.setPosition(
+            launcherIcon.x + (launcherIcon.width / 2),
+            backdrop.y + header.height + (PADDING * 2)
+        );
+        mcLauncher.add(selectWorldText);
 
         var worlds = [
             { name:"Farlands", dateCreated: "(8/13/17, TIME TBA)", mode: "Survival Mode,", version: "1.7.3", image: "mc_level_farlands"},
             { name: "N.T.T", dateCreated: "(DATE TBA, TIME TBA)", mode: "Survival Mode,", version: "1.20.6", image: "mc_level_entities"}
         ];
 
-        var xPos = backdrop.x + (launcherIcon.width / 2) + PADDING;
+        var xPos = backdrop.x + (launcherIcon.width / 2) + (PADDING * 6);
         var yPos = backdrop.y + (19 + PADDING) * 2;
 
         for (i in 0...worlds.length) {
@@ -71,10 +75,10 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             });
             worldButton.loadGraphic(Paths.image('desktop/applications/minecraft/${world.image}'));
             worldButton.setPosition(xPos, yPos);
-            window.add(worldButton);
+            mcLauncher.add(worldButton);
 
             var worldName = new FlxText(worldButton.x + worldButton.width + PADDING, worldButton.y, world.name);
-            window.add(worldName);
+            mcLauncher.add(worldName);
             
             var worldInfo = new FlxText(
                 worldName.x,
@@ -83,11 +87,42 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             );
             worldInfo.setFormat(10, FlxColor.GRAY);
                 
-            window.add(worldInfo);
+            mcLauncher.add(worldInfo);
 
             yPos += (worldButton.height * 1.5) + PADDING;
-            worldButton.width = 360;
+            worldButton.width = 313;
         }
+
+        var xButton:FlxButton = new FlxButton(() -> {
+            close();
+        });
+        xButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_x'));
+        xButton.setPosition(
+            header.x + header.width - xButton.width,
+            header.y + (header.height / 2) - (xButton.height / 2)
+        );
+        mcLauncher.add(xButton);
+
+        var fullscreenButton:FlxButton = new FlxButton(() -> {
+            // FlxG.switchState(new MinecraftLauncherSubState());
+        });
+        fullscreenButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_fullscreen'));
+        fullscreenButton.setPosition(
+            xButton.x - fullscreenButton.width - (PADDING / 2),
+            xButton.y
+        );
+        mcLauncher.add(fullscreenButton);
+
+        var minimizeButton:FlxButton;
+        minimizeButton = new FlxButton(() -> {
+            mcLauncher.visible = false;
+        });
+        minimizeButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_minimize'));
+        minimizeButton.setPosition(
+            fullscreenButton.x - minimizeButton.width - (PADDING / 2),
+            xButton.y
+        );
+        mcLauncher.add(minimizeButton);
 
         var playButton = new FlxButton("Play Selected World", () -> {
             FlxG.sound.play(Paths.sound('minecraft/click'), false);
@@ -97,7 +132,7 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             backdrop.x + playButton.width,
             backdrop.y + backdrop.height - (playButton.height * 1.5)
         );
-        window.add(playButton);
+        mcLauncher.add(playButton);
 
         difficultyButton = new FlxButton('Difficulty: ${DIFFICULTIES[difficultyIndex]}', cycleDifficulty);
         difficultyButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
@@ -105,44 +140,17 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
             playButton.x + difficultyButton.width + (PADDING * 2),
             backdrop.y + backdrop.height - (difficultyButton.height * 1.5)
         );
-        window.add(difficultyButton);
+        mcLauncher.add(difficultyButton);
 
-        /*
-        var xButton:FlxButton = new FlxButton(() -> {
-            close();
-        });
-        xButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_x'));
-        xButton.setPosition(
-            backdrop.x + backdrop.width - xButton.width - 5,
-            backdrop.y + 5
-        );
-
-        var fullscreenButton:FlxButton = new FlxButton(() -> {
-            // FlxG.switchState(new MinecraftLauncherSubState());
-        });
-        fullscreenButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_fullscreen'));
-        fullscreenButton.setPosition(
-            xButton.x - fullscreenButton.width - 2,
-            xButton.y
-        );
-
-        var minimizeButton:FlxButton = new FlxButton(() -> {
-            // FlxG.switchState(new MinecraftLauncherSubState());
-        });
-        minimizeButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_minimize'));
-        minimizeButton.setPosition(
-            fullscreenButton.x - minimizeButton.width - 2,
-            xButton.y
-        );
-        */
-        add(window);
+        add(mcLauncher);
+        mcLauncher.scale.set(2, 2);
 	}
 
-    private function createWindow():Void {
-        window = new FlxSpriteContainer();
+    private function createmcLauncher():Void {
+        mcLauncher = new FlxSpriteContainer();
         backdrop = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/launcher_window'));
         backdrop.screenCenter(XY);
-        window.add(backdrop);
+        mcLauncher.add(backdrop);
     }
 
     override function update(elapsed:Float) {
@@ -152,14 +160,14 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
 
     private function handleDragging():Void {
         if (FlxG.mouse.justPressed && header.overlapsPoint(FlxG.mouse.getPosition())) {
-            isWindowBeingDragged = true;
-            dragOffset.set(FlxG.mouse.x - window.x, FlxG.mouse.y - window.y);
+            ismcLauncherBeingDragged = true;
+            dragOffset.set(FlxG.mouse.x - mcLauncher.x, FlxG.mouse.y - mcLauncher.y);
         }
 
-        if (FlxG.mouse.justReleased) isWindowBeingDragged = false;
+        if (FlxG.mouse.justReleased) ismcLauncherBeingDragged = false;
 
-        if (isWindowBeingDragged) {
-            window.setPosition(
+        if (ismcLauncherBeingDragged) {
+            mcLauncher.setPosition(
                 FlxG.mouse.x - dragOffset.x,
                 FlxG.mouse.y - dragOffset.y
             );
