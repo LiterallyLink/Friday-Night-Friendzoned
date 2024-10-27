@@ -19,12 +19,12 @@ typedef CharacterCredentials = {
 
 class LoginState extends MusicBeatState {
     public var backgroundElements:FlxGroup = new FlxGroup();
-    public var foregroundCloudGroup:FlxGroup = new FlxGroup();
     public var interfaceElements:FlxGroup = new FlxGroup();
-    public var userIcons:FlxGroup = new FlxGroup();
-    public var usernameGroup:FlxGroup = new FlxGroup();
+    public var userElements:FlxGroup = new FlxGroup();
 
+    public var foregroundCloudGroup:FlxGroup = new FlxGroup();
     private var floatUp:Bool = true;
+
     private var loginTheme:String;
     private var isNewUserRequired:Bool;
     private var selectedUser:String = "";
@@ -50,6 +50,7 @@ class LoginState extends MusicBeatState {
         isNewUserRequired = ClientPrefs.data.needToCreateNewUser;
 
         FlxTransitionableState.skipNextTransIn = true;
+
         persistentUpdate = true;
         persistentDraw = true;
 
@@ -65,33 +66,33 @@ class LoginState extends MusicBeatState {
         add(backgroundElements);
         add(foregroundCloudGroup);
         add(interfaceElements);
-        add(userIcons);
-        add(usernameGroup);
+        add(userElements);
 
         renderLoginMenu();
     }
 
     override function update(elapsed:Float) {
         super.update(elapsed);
-        if (FlxG.sound.music != null) Conductor.songPosition = FlxG.sound.music.time;
+        if (FlxG.sound.music != null)
+            Conductor.songPosition = FlxG.sound.music.time;
     }
 
     private function renderLoginMenu() {
         var theme = loginTheme;
     
-        var loginBg:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('menulogin/${theme}/bg'));
-        var loginBgGradient:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('menulogin/${theme}/bg_gradient'));
-        var borderSprite:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('menulogin/${theme}/border'));
+        var loginBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menulogin/${theme}/bg'));
+        var loginBgGradient:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menulogin/${theme}/bg_gradient'));
+        var borderSprite:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menulogin/${theme}/border'));
         var bgClouds:FlxSprite = new FlxSprite(488, 155).loadGraphic(Paths.image('menulogin/${theme}/bg_clouds'));
 
         var welcomeSprite:FlxSprite = new FlxSprite(253, 276).loadGraphic(Paths.image('menulogin/${theme}/welcome'));
         var loginPromptText:FlxSprite = new FlxSprite(229, 330).loadGraphic(Paths.image('menulogin/${theme}/beginText'));
         var dividerSprite:FlxSprite = new FlxSprite(616, 203).loadGraphic(Paths.image('menulogin/${theme}/divider'));
 
-        var powerButton:FlxButton = new FlxButton(43, 629, handlePowerButtonClick);
+        var powerButton:FlxButton = new FlxButton(43, 629, () -> {
+            handlePowerButtonClick();
+        });
         powerButton.loadGraphic(Paths.image('menulogin/${theme}/off_switch'));
-
-        // add a button adjacent to powerButton that runs clearUserData()
 
         var resetButton:FlxButton = new FlxButton(powerButton.x + powerButton.width, powerButton.y, "Refresh Login Menu", () -> {
                 ClientPrefs.data.userCreatedName = "";
@@ -160,7 +161,7 @@ class LoginState extends MusicBeatState {
             });
 
             icon.loadGraphic(Paths.image('menulogin/icons/${credentials.icon}'));
-            userIcons.add(icon);
+            userElements.add(icon);
 
             var usernameText = new FlxText(
                 X_POS + ICON_HEIGHT,
@@ -171,7 +172,7 @@ class LoginState extends MusicBeatState {
 
             usernameText.borderStyle = SHADOW;
             usernameText.y -= (usernameText.height / 2);
-            usernameGroup.add(usernameText);
+            userElements.add(usernameText);
 
             Y_POS += (ICON_HEIGHT + ICON_PADDING);
         }
@@ -184,7 +185,7 @@ class LoginState extends MusicBeatState {
         newUserIcon.loadGraphic(Paths.image(
             isNewUserRequired ? 'menulogin/icons/newUser' : 'menulogin/icons/${ClientPrefs.data.userCreatedIcon}'
         ));
-        userIcons.add(newUserIcon);
+        userElements.add(newUserIcon);
 
         var newUserText = new FlxText(
             X_POS + ICON_HEIGHT,
@@ -195,7 +196,7 @@ class LoginState extends MusicBeatState {
         
         newUserText.borderStyle = SHADOW;
         newUserText.y -= (newUserText.height / 2);
-        usernameGroup.add(newUserText);
+        userElements.add(newUserText);
     }
 
     private function handlePowerButtonClick():Void {
@@ -226,8 +227,7 @@ class LoginState extends MusicBeatState {
 
     private function handleGoldenFreddyClick():Void {
         remove(interfaceElements);
-        remove(userIcons);
-        remove(usernameGroup);
+        remove(userElements);
         FlxG.sound.music.stop();
         FlxG.sound.play(Paths.sound('GoldenFreddyScream'));
         var goldenFreddy:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('menulogin/fnaf/Golden_Freddy'));
@@ -239,8 +239,7 @@ class LoginState extends MusicBeatState {
 
     public function initLoadingScreen(message:String):Void {
         remove(interfaceElements);
-        remove(userIcons);
-        remove(usernameGroup);
+        remove(userElements);
 
         var logo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logos/friendzonedLoadingLogo${BootState.logoVariant}'));
         logo.screenCenter(XY);
@@ -266,12 +265,9 @@ class LoginState extends MusicBeatState {
 
         var floatInt:Int = floatUp ? 1 : -1;
 
-        for (i in 0...4) {
-            var icon:FlxSprite = cast userIcons.members[i];
-            var username:FlxText = cast usernameGroup.members[i];
-            icon.y += floatInt;
-            username.y += floatInt;
-            trace(floatInt);
+        for (i in 0...userElements.length) {
+            var elements:FlxSprite = cast userElements.members[i];
+            elements.y += floatInt;
         }
 
         floatUp = !floatUp;
@@ -296,8 +292,6 @@ class LoginState extends MusicBeatState {
                 case 2:
                     cloud.x += CLOUD_SPEED;
             }
-
-            trace(cloud.y, cloud.x);
         }
     }
 
