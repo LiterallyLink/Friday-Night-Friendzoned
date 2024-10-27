@@ -18,7 +18,7 @@ class BiosState extends MusicBeatState
         FlxG.mouse.visible = true;
 		FlxG.mouse.useSystemCursor = true;
 
-		var friendzonedOSLogo:FlxSprite = new FlxSprite(10, 10).loadGraphic(Paths.image('logo/friendzonedOSLogo'));
+		var friendzonedOSLogo:FlxSprite = new FlxSprite(10, 10).loadGraphic(Paths.image('logos/friendzonedOSLogo'));
 		add(friendzonedOSLogo);
     
         var biosText:FlxText = new FlxText(10, 145, "DA FUCK? You just crashed the party...");
