@@ -34,7 +34,8 @@ class DesktopState extends MusicBeatState
         FlxG.mouse.useSystemCursor = true;
 
         FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
-        
+        FlxG.sound.play(Paths.sound('humming'), true);
+
         var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/bgs/${desktopTheme}'));
         var taskbar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/taskbar'));
         taskbar.y = FlxG.height - taskbar.height;
@@ -65,7 +66,7 @@ class DesktopState extends MusicBeatState
         musicPlayerButton.x = (photoAlbumButton.x + photoAlbumButton.width) + 10;
         add(musicPlayerButton);
 
-        var achievementButton = new FlxButton(0, 0, null, function() {
+        var achievementButton = new FlxButton(() -> {
             // FlxG.switchState(new AchievementState());
         });
         achievementButton.loadGraphic(Paths.image('desktop/icons/achievements'));
@@ -78,7 +79,6 @@ class DesktopState extends MusicBeatState
         var appRecyclingBin = new ApplicationButton(30, 500, "desktop/icons/recycle_bin_empty", "Recycling Bin", desktopBounds);
         var appCredits = new ApplicationButton(30, 30, "desktop/icons/sticky_note", 'Credits.txt', desktopBounds);
         var appMinecraft = new ApplicationButton(200, 200, 'desktop/icons/mc', 'Minecraft', desktopBounds, MinecraftLauncherSubState);
-        appMinecraft.setScale(0.8);
         
         add(appRecyclingBin);
         add(appCredits);
