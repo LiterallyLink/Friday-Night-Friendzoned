@@ -143,7 +143,6 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
         mcLauncher.add(difficultyButton);
 
         add(mcLauncher);
-        mcLauncher.scale.set(2, 2);
 	}
 
     private function createmcLauncher():Void {
