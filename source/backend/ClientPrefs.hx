@@ -82,6 +82,10 @@ import states.BootState;
 	public var userCreatedName:String = "";
 	public var userCreatedPassword:String = "";
 	public var userCreatedIcon:String = 'default';
+
+	public var hasBrowserTransformed:Bool = false;
+	public var sfwMode:Bool = false;
+	public var ITSME:Bool = false;
 }
 
 class ClientPrefs {

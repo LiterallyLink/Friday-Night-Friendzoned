@@ -12,6 +12,8 @@ import flixel.math.FlxPoint;
 import states.LoginState;
 import states.DesktopState;
 
+import backend.DragManager;
+
 class LoginWindowSubState extends FlxSubState {
     private var loginWindowContainer:FlxSpriteContainer = new FlxSpriteContainer();
     private var passwordField:FlxInputText;
@@ -28,8 +30,6 @@ class LoginWindowSubState extends FlxSubState {
 
     public function new(selectedUser:String, isNewUserRequired:Bool) {
         super();
-
-        closeCallback = () -> {};
 
         this.selectedUser = selectedUser;
         this.isNewUserRequired = isNewUserRequired;
@@ -48,28 +48,13 @@ class LoginWindowSubState extends FlxSubState {
     
         initLoginInputFields();
         add(loginWindowContainer);
+
+        DragManager.getInstance().registerDraggableGroup(loginWindowContainer, loginHeader);
     }
 
     override function update(elapsed:Float) {
         super.update(elapsed);
-
-        if (FlxG.keys.justPressed.ESCAPE) {
-            close();
-        }
-        
-        if (FlxG.mouse.justPressed && loginHeader.overlapsPoint(FlxG.mouse.getPosition())) {
-            isWindowBeingDragged = true;
-            dragOffset.set(FlxG.mouse.x - loginWindowContainer.x, FlxG.mouse.y - loginWindowContainer.y);
-        }
-
-        if (FlxG.mouse.justReleased) isWindowBeingDragged = false;
-
-        if (isWindowBeingDragged) {
-            loginWindowContainer.setPosition(
-                FlxG.mouse.x - dragOffset.x,
-                FlxG.mouse.y - dragOffset.y
-            );
-        }
+        DragManager.getInstance().update();
     }
 
     private function initLoginWindow() {

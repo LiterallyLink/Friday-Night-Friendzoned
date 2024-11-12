@@ -3,180 +3,244 @@ package substates;
 import flixel.*;
 import flixel.FlxSubState;
 import flixel.ui.FlxButton;
-import flixel.addons.transition.FlxTransitionableState;
+import flixel.text.FlxText;
 import flixel.group.FlxSpriteContainer;
+import flixel.input.keyboard.FlxKey;
+
+import backend.DragManager;
 
 class MinecraftLauncherSubState extends MusicBeatSubstate
 {
-    private static final PADDING:Int = 4;
-
-    public static final DIFFICULTIES:Array<String> = ["Peaceful", "Normal", "Hardcore"];
-    private static var difficultyIndex = 0;
-    public var difficultyButton:FlxButton;
+    private static final BASE_PADDING:Int = 4;
+    private static final BASE_WIDTH:Float = 854;
+    private static final BASE_HEIGHT:Float = 480;
+    private static final BASE_FONT_SIZE:Int = 10;
+    
+    private static final MIN_SCALE:Float = 0.5;
+    private static final MAX_SCALE:Float = 5.0;
+    private static final SCALE_STEP:Float = 0.1;
 
     private var mcLauncher:FlxSpriteContainer;
     public var backdrop:FlxSprite;
     private var header:FlxButton;
+    private var launcherIcon:FlxSprite;
+    private var launcherTitle:FlxText;
+    private var xButton:FlxButton;
+    private var fullscreenButton:FlxButton;
+    private var minimizeButton:FlxButton;
+    private var selectWorldText:FlxText;
+    
+    private var scaleX:Float;
+    private var scaleY:Float;
+    private var scaledPadding:Float;
+    private var currentScale:Float = 1.0;
 
-    private var isDragging:Bool = false;
-    private var dragOffset:FlxPoint = new FlxPoint();
-    private var ismcLauncherBeingDragged:Bool = false;
+    private static final worlds = [
+        { name:"Farlands", dateCreated: "(8/13/17, 7:27 PM)", mode: "Survival Mode,", version: "1.7.3", image: "mc_level_farlands"},
+        { name: "N.T.T", dateCreated: "(DATE TBA, TIME TBA)", mode: "Survival Mode,", version: "1.20.6", image: "mc_level_entities"}
+    ];
 
-	public function new()
-	{
-		super();
+    public function new()
+    {
+        super();
         closeCallback = () -> {};
-	}
-	
-	override public function create():Void 
-	{
+    }
+    
+    override public function create():Void 
+    {
         super.create();
-        createmcLauncher();
-
+        calculateScaling();
+        createMCLauncher();
+        
         header = new FlxButton();
-        header.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_header'));
-        header.setPosition(backdrop.x + PADDING, backdrop.y + PADDING);
+        header.loadGraphic(Paths.image('menudesktop/applications/minecraft/mc_launcher_header'));
+        
+        launcherIcon = new FlxSprite();
+        launcherIcon.loadGraphic(Paths.image('menudesktop/applications/minecraft/mc_launcher_icon'));
+        
+        launcherTitle = new FlxText(0, 0, 0, "Minecraft", Math.round(BASE_FONT_SIZE * currentScale));
+        
+        selectWorldText = new FlxText(0, 0, 0, "Select World", Math.round(BASE_FONT_SIZE * currentScale));
+        
+        xButton = new FlxButton(0, 0, "", () -> {
+            close();
+        });
+        xButton.loadGraphic(Paths.image('menudesktop/applications/minecraft/mc_header_x'));
+        
+        fullscreenButton = new FlxButton(0, 0, "", () -> {
+            // FlxG.switchState(new MinecraftLauncherSubState());
+        });
+        fullscreenButton.loadGraphic(Paths.image('menudesktop/applications/minecraft/mc_header_fullscreen'));
+        
+        minimizeButton = new FlxButton(0, 0, "", () -> {
+            mcLauncher.visible = false;
+        });
+        minimizeButton.loadGraphic(Paths.image('menudesktop/applications/minecraft/mc_header_minimize'));
+        
         mcLauncher.add(header);
-
-        var launcherIcon:FlxSprite = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_icon'));
-        launcherIcon.setPosition(
-            backdrop.x + (launcherIcon.width / 2),
-            (backdrop.y + launcherIcon.height / 2) - 1
-        );
         mcLauncher.add(launcherIcon);
-
-        var launcherTitle:FlxText = new FlxText("Minecraft", 10);
-        launcherTitle.setPosition(
-            launcherIcon.x + launcherIcon.width + PADDING,
-            launcherIcon.y + (launcherIcon.height / 2) - (launcherTitle.height / 2)
-        );
         mcLauncher.add(launcherTitle);
-
-        var selectWorldText:FlxText = new FlxText("Select World", 10);
-        selectWorldText.setPosition(
-            launcherIcon.x + (launcherIcon.width / 2),
-            backdrop.y + header.height + (PADDING * 2)
-        );
         mcLauncher.add(selectWorldText);
+        mcLauncher.add(xButton);
+        mcLauncher.add(fullscreenButton);
+        mcLauncher.add(minimizeButton);
+        createWorldsList();
 
-        var worlds = [
-            { name:"Farlands", dateCreated: "(8/13/17, TIME TBA)", mode: "Survival Mode,", version: "1.7.3", image: "mc_level_farlands"},
-            { name: "N.T.T", dateCreated: "(DATE TBA, TIME TBA)", mode: "Survival Mode,", version: "1.20.6", image: "mc_level_entities"}
-        ];
+        updateScale();
+        
+        add(mcLauncher);
 
-        var xPos = backdrop.x + (launcherIcon.width / 2) + (PADDING * 6);
-        var yPos = backdrop.y + (19 + PADDING) * 2;
+        DragManager.getInstance().registerDraggableGroup(mcLauncher, header);
+    }
 
-        for (i in 0...worlds.length) {
-            var world = worlds[i];
+    override public function update(elapsed:Float):Void
+    {
+        super.update(elapsed);
+        DragManager.getInstance().update();
+        
+        var ctrlPressed:Bool = FlxG.keys.pressed.CONTROL;
+        
+        if (ctrlPressed)
+        {
+            if (FlxG.keys.justPressed.PLUS)
+            {
+                currentScale = Math.min(currentScale + SCALE_STEP, MAX_SCALE);
+                updateScale();
+            }
+            else if (FlxG.keys.justPressed.MINUS)
+            {
+                currentScale = Math.max(currentScale - SCALE_STEP, MIN_SCALE);
+                updateScale();
+            }
+        }
+    }
 
-            var worldButton = new FlxButton(() -> {
-                FlxG.sound.play(Paths.sound('minecraft/click'), false);
+    private function scaleElement(element:FlxSprite):Void {
+        element.scale.set(scaleX * currentScale, scaleY * currentScale);
+        element.updateHitbox();
+    }
+
+    private function updateScale():Void
+        {
+            calculateScaling();
+            
+            scaleElement(backdrop);
+            backdrop.screenCenter(XY);
+            
+            scaleElement(header);
+            scaleElement(launcherIcon);
+            
+            launcherTitle.size = Math.round(BASE_FONT_SIZE * currentScale);
+            selectWorldText.size = Math.round(BASE_FONT_SIZE * currentScale);
+            
+            scaleElement(xButton);
+            scaleElement(fullscreenButton);
+            scaleElement(minimizeButton);
+            
+            header.setPosition(
+                backdrop.x + (scaledPadding * currentScale), 
+                backdrop.y + (scaledPadding * currentScale)
+            );
+            
+            var headerCenterY:Float = header.y + (header.height / 2);
+            
+            launcherIcon.setPosition(
+                header.x + (scaledPadding * currentScale * 2),
+                headerCenterY - (launcherIcon.height / 2)
+            );
+            
+            launcherTitle.setPosition(
+                launcherIcon.x + launcherIcon.width + (scaledPadding * currentScale),
+                headerCenterY - (launcherTitle.height / 2)
+            );
+            
+            selectWorldText.setPosition(
+                backdrop.x + (scaledPadding * currentScale * 4),
+                backdrop.y + header.height + (scaledPadding * currentScale * 4)
+            );
+            
+            xButton.setPosition(
+                header.x + header.width - xButton.width - (scaledPadding * currentScale),
+                headerCenterY - (xButton.height / 2)
+            );
+            
+            fullscreenButton.setPosition(
+                xButton.x - fullscreenButton.width - ((scaledPadding * currentScale) / 2),
+                xButton.y
+            );
+            
+            minimizeButton.setPosition(
+                fullscreenButton.x - minimizeButton.width - ((scaledPadding * currentScale) / 2),
+                xButton.y
+            );
+
+            for (sprite in mcLauncher.members.copy()) {
+                if (sprite != backdrop && sprite != header && sprite != launcherIcon && 
+                    sprite != launcherTitle && sprite != selectWorldText && 
+                    sprite != xButton && sprite != fullscreenButton && sprite != minimizeButton) {
+                    mcLauncher.remove(sprite);
+                }
+            }
+            
+            createWorldsList();
+        }
+
+    private function calculateScaling():Void {
+        var gameWidth:Float = FlxG.width;
+        var gameHeight:Float = FlxG.height;
+        
+        scaleX = gameWidth / BASE_WIDTH;
+        scaleY = gameHeight / BASE_HEIGHT;
+        
+        scaledPadding = BASE_PADDING * scaleX;
+    }
+
+    private function createWorldsList():Void {
+        var xPos = backdrop.x + (launcherIcon.width / 2) + (BASE_PADDING * currentScale * 6);
+        var yPos = selectWorldText.y + selectWorldText.height + (BASE_PADDING * currentScale * 2);
+    
+        for (world in worlds) {
+            var worldButton = new FlxButton(0, 0, "", () -> {
+                FlxG.sound.play(Paths.sound('minecraft/click'));
             });
-            worldButton.loadGraphic(Paths.image('desktop/applications/minecraft/${world.image}'));
+            worldButton.loadGraphic(Paths.image('menudesktop/applications/minecraft/${world.image}'));
+            scaleElement(worldButton); 
             worldButton.setPosition(xPos, yPos);
-            mcLauncher.add(worldButton);
-
-            var worldName = new FlxText(worldButton.x + worldButton.width + PADDING, worldButton.y, world.name);
-            mcLauncher.add(worldName);
+            
+            var worldName = new FlxText(
+                worldButton.x + worldButton.width + (BASE_PADDING * currentScale), 
+                worldButton.y, 
+                0,
+                world.name, 
+                Math.round(BASE_FONT_SIZE * currentScale)
+            );
             
             var worldInfo = new FlxText(
                 worldName.x,
-                worldName.y + worldName.height - PADDING,
-                '${world.name} ${world.dateCreated}\n${world.mode} Version: ${world.version}'
+                worldName.y + worldName.height - (BASE_PADDING * currentScale),
+                0,
+                '${world.name} ${world.dateCreated}\n${world.mode} Version: ${world.version}',
+                Math.round(BASE_FONT_SIZE * currentScale)
             );
-            worldInfo.setFormat(10, FlxColor.GRAY);
-                
+            worldInfo.setFormat(null, Math.round(BASE_FONT_SIZE * currentScale), FlxColor.GRAY);
+            
+            mcLauncher.add(worldButton);
+            mcLauncher.add(worldName);
             mcLauncher.add(worldInfo);
-
-            yPos += (worldButton.height * 1.5) + PADDING;
-            worldButton.width = 313;
+    
+            yPos += (worldButton.height * 1.5) + (BASE_PADDING * currentScale);
+            worldButton.width = 313 * (scaleX * currentScale);
         }
+    }
 
-        var xButton:FlxButton = new FlxButton(() -> {
-            close();
-        });
-        xButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_x'));
-        xButton.setPosition(
-            header.x + header.width - xButton.width,
-            header.y + (header.height / 2) - (xButton.height / 2)
-        );
-        mcLauncher.add(xButton);
-
-        var fullscreenButton:FlxButton = new FlxButton(() -> {
-            // FlxG.switchState(new MinecraftLauncherSubState());
-        });
-        fullscreenButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_fullscreen'));
-        fullscreenButton.setPosition(
-            xButton.x - fullscreenButton.width - (PADDING / 2),
-            xButton.y
-        );
-        mcLauncher.add(fullscreenButton);
-
-        var minimizeButton:FlxButton;
-        minimizeButton = new FlxButton(() -> {
-            mcLauncher.visible = false;
-        });
-        minimizeButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_header_minimize'));
-        minimizeButton.setPosition(
-            fullscreenButton.x - minimizeButton.width - (PADDING / 2),
-            xButton.y
-        );
-        mcLauncher.add(minimizeButton);
-
-        var playButton = new FlxButton("Play Selected World", () -> {
-            FlxG.sound.play(Paths.sound('minecraft/click'), false);
-        });
-        playButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
-        playButton.setPosition(
-            backdrop.x + playButton.width,
-            backdrop.y + backdrop.height - (playButton.height * 1.5)
-        );
-        mcLauncher.add(playButton);
-
-        difficultyButton = new FlxButton('Difficulty: ${DIFFICULTIES[difficultyIndex]}', cycleDifficulty);
-        difficultyButton.loadGraphic(Paths.image('desktop/applications/minecraft/mc_launcher_button'));
-        difficultyButton.setPosition(
-            playButton.x + difficultyButton.width + (PADDING * 2),
-            backdrop.y + backdrop.height - (difficultyButton.height * 1.5)
-        );
-        mcLauncher.add(difficultyButton);
-
-        add(mcLauncher);
-	}
-
-    private function createmcLauncher():Void {
+    private function createMCLauncher():Void {
         mcLauncher = new FlxSpriteContainer();
-        backdrop = new FlxSprite().loadGraphic(Paths.image('desktop/applications/minecraft/launcher_window'));
+        
+        backdrop = new FlxSprite().loadGraphic(Paths.image('menudesktop/applications/minecraft/launcher_window'));
+        backdrop.scale.set(scaleX, scaleY);
+        backdrop.updateHitbox();
         backdrop.screenCenter(XY);
+        
         mcLauncher.add(backdrop);
     }
-
-    override function update(elapsed:Float) {
-        super.update(elapsed);
-        handleDragging();
-    }
-
-    private function handleDragging():Void {
-        if (FlxG.mouse.justPressed && header.overlapsPoint(FlxG.mouse.getPosition())) {
-            ismcLauncherBeingDragged = true;
-            dragOffset.set(FlxG.mouse.x - mcLauncher.x, FlxG.mouse.y - mcLauncher.y);
-        }
-
-        if (FlxG.mouse.justReleased) ismcLauncherBeingDragged = false;
-
-        if (ismcLauncherBeingDragged) {
-            mcLauncher.setPosition(
-                FlxG.mouse.x - dragOffset.x,
-                FlxG.mouse.y - dragOffset.y
-            );
-        }
-    }
-
-    private function cycleDifficulty():Void {
-        FlxG.sound.play(Paths.sound('minecraft/click'), false);
-        difficultyIndex = (difficultyIndex + 1) % DIFFICULTIES.length;
-        difficultyButton.text = "Difficulty: " + DIFFICULTIES[difficultyIndex];
-    }
-	
 }

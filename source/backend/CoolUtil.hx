@@ -157,4 +157,26 @@ class CoolUtil
 				text.borderStyle = NONE;
 		}
 	}
+
+	public static function formatNumberWithCommas(num:Int):String {
+		var str = Std.string(num);
+		var formatted = '';
+		var counter = 0;
+
+		for (i in 0...str.length) {
+			var index = str.length - 1 - i;
+			if (counter > 0 && counter % 3 == 0) {
+				formatted = ',' + formatted;
+			}
+
+			formatted = str.charAt(index) + formatted;
+			counter++;
+		}
+
+		return formatted;
+	}
+
+	public static function boundedInt(value:Float, max:Int):Int {
+		return Math.floor(Math.min(Math.max(value, 0), max - 1));
+	}
 }

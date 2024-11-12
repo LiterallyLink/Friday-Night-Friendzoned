@@ -1,0 +1,10 @@
+Z_Init: Init Zone Memory Allocator
+CON_Init: Init Game Console
+G_Init: Setting up game input and commands
+M_LoadDefaults: Loading game configuration
+I_Init: Setting up machine state.
+D_Init: Init DOOM parameters
+W_Init: Init WADfiles.
+
+********* ERROR *********
+W_Init: IWAD not found

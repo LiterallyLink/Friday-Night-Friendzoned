@@ -5,24 +5,25 @@ import flixel.group.FlxGroup;
 import flixel.util.FlxSpriteUtil;
 import flixel.input.keyboard.FlxKey;
 import backend.Highscore;
-import shaders.CRTShader;
-import openfl.filters.ShaderFilter;
+import backend.ShaderManager;
 
 class BootState extends MusicBeatState {
-    public var crtShader:CRTShader;
-
     public static var muteKeys:Array<FlxKey> = [FlxKey.ZERO];
     public static var volumeDownKeys:Array<FlxKey> = [FlxKey.NUMPADMINUS, FlxKey.MINUS];
     public static var volumeUpKeys:Array<FlxKey> = [FlxKey.NUMPADPLUS, FlxKey.PLUS];
 
     public static var initialized:Bool = false;
+
     public static var shouldCrashOnBoot:Bool;
+    public static var CRASH_PROBABILITY:Float = 0.05;
+
     public static var canEnterBios:Bool = true;
 
     public static var logoVariant:Int = FlxG.random.int(1, 3);
 
     override public function create():Void {
         Paths.clearStoredMemory();
+
         FlxG.mouse.visible = false;
         FlxG.fixedTimestep = false;
         FlxG.game.focusLostFramerate = 60;
@@ -31,11 +32,8 @@ class BootState extends MusicBeatState {
         super.create();
 
         loadPreferences();
-
-        crtShader = new CRTShader(0.35, 0.75);
-        FlxG.camera.setFilters([new ShaderFilter(crtShader)]);
-
-        initBootSequence();
+        ShaderManager.getInstance().applyShaders();
+        loadBootSequence();
     }
 
     private function loadPreferences():Void {
@@ -47,7 +45,7 @@ class BootState extends MusicBeatState {
             if (FlxG.save.data != null && FlxG.save.data.fullscreen) {
                 FlxG.fullscreen = FlxG.save.data.fullscreen;
             }
-
+            
             persistentUpdate = true;
             persistentDraw = true;
         }
@@ -57,14 +55,12 @@ class BootState extends MusicBeatState {
         }
     }
 
-    private function initBootSequence():Void {
+    private function loadBootSequence():Void {
         FlxG.sound.play(Paths.sound('bootup'));
     
-        var bootTextGroup:FlxGroup = new FlxGroup();
-        add(bootTextGroup);
-    
-        var currentDate:String = Date.now().toString();
-        var bootMessages:Array<{text:String, color:UInt}> = [
+        final currentDate:String = Date.now().toString();
+
+        final bootPrompts:Array<{text:String, color:UInt}> = [
             {text: 'Yo, yo, yo! Bootin\' up this funky fresh system!\n${currentDate}', color: FlxColor.YELLOW},
             {text: "scanning for funky fresh beats...", color: FlxColor.WHITE},
             {text: "warming up microphones...", color: FlxColor.WHITE},
@@ -100,41 +96,47 @@ class BootState extends MusicBeatState {
     
         var yPos:Int = 5;
         var delay:Float = 0;
+
+        final bootPromptGroup:FlxGroup = new FlxGroup();
+        add(bootPromptGroup);
     
-        if (FlxG.random.float(0, 1) < 0.05)
+        if (FlxG.random.float(0, 1) < CRASH_PROBABILITY)
             shouldCrashOnBoot = true;
     
-        for (i in 0...bootMessages.length) {
-            var message = bootMessages[i];
-            var text:FlxText = new FlxText(10, yPos, message.text).setFormat(null, 8, message.color);
+        for (i in 0...bootPrompts.length) {
+            var prompt:FlxText = new FlxText(10, yPos, bootPrompts[i].text)
+                .setFormat(null, 8, bootPrompts[i].color);
+
             yPos += (i == 0 || i == 14 || i == 15 || i == 16) ? 30 : 10;
             delay += FlxG.random.float(0.1, 0.3);
+
             new FlxTimer().start(delay, function(timer:FlxTimer):Void {
-                bootTextGroup.add(text);
+                bootPromptGroup.add(prompt);
             });
         }
     
-        var enterBIOSText:FlxText = new FlxText(10, FlxG.height - 30, "Press <DEL> to enter SETUP");
-        enterBIOSText.setFormat(null, 8, FlxColor.YELLOW);
-        bootTextGroup.add(enterBIOSText);
+        final enterBiosPrompt:FlxText = new FlxText(10, FlxG.height - 30, "Press <DEL> to enter SETUP");
+        enterBiosPrompt.setFormat(null, 8, FlxColor.YELLOW);
+        bootPromptGroup.add(enterBiosPrompt);
     
         new FlxTimer().start(delay + 0.5, (_) -> {
             canEnterBios = false;
-            remove(bootTextGroup);
+            remove(bootPromptGroup);
             showLogoAndTransition();
         });
     }
 
     private function showLogoAndTransition():Void {
-        var friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logos/friendzonedLogo${logoVariant}'));
+        final friendzonedLogo:FlxSprite = new FlxSprite().loadGraphic(Paths.image('logos/friendzonedLogo${logoVariant}'));
         friendzonedLogo.screenCenter(XY);
+
+        final copyrightNotice:FlxText = new FlxText(10, FlxG.height - 30, '@ 1993 Friendzoned Electronics Inc. All rights reserved.', 7);
+
         add(friendzonedLogo);
+        add(copyrightNotice);
 
         FlxSpriteUtil.fadeIn(friendzonedLogo, 2, true);
         FlxG.sound.play(Paths.sound('startup'));
-
-        var copyrightText:FlxText = new FlxText(10, FlxG.height - 30, '@ 1993 Friendzoned Electronics Inc. All rights reserved.', 7);
-        add(copyrightText);
 
         new FlxTimer().start(5, (_) -> {
             LoadingState.loadAndSwitchState(new LoginState());
@@ -148,6 +150,7 @@ class BootState extends MusicBeatState {
         super.update(elapsed);
 
         if (canEnterBios && (FlxG.keys.justPressed.DELETE || FlxG.keys.justPressed.BACKSPACE)) {
+            canEnterBios = false;
             LoadingState.loadAndSwitchState(new BiosState());
         }
     }

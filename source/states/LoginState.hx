@@ -4,12 +4,14 @@ import flixel.FlxG;
 import flixel.ui.FlxButton;
 import flixel.group.FlxGroup;
 import flixel.util.FlxSpriteUtil;
-import openfl.filters.ShaderFilter;
 import flixel.group.FlxSpriteGroup;
 import flixel.math.FlxPoint;
+
+import backend.ShaderManager;
+import backend.Achievements;
 import flixel.addons.transition.FlxTransitionableState;
+
 import substates.LoginWindowSubState;
-import shaders.CRTShader;
 
 typedef CharacterCredentials = {
     var username:String;
@@ -29,10 +31,13 @@ class LoginState extends MusicBeatState {
     private var isNewUserRequired:Bool;
     private var selectedUser:String = "";
 
-    public var crtShader:CRTShader;
+    private var dayCycleSprite:FlxSprite;
+    private var clockText:FlxText;
+    private var clockTimer:FlxTimer;
+    private var updateTimer:FlxTimer;
 
     public static final USER_CREDENTIALS:Map<String, CharacterCredentials> = [
-        'bf' => { username: "Her Bf <3", password: "Beepbopbo", icon: "bf" },
+        'bf' => { username: "Her Bf <3", password: "Bopeebo", icon: "bf" },
         'gf' => { username: "His Gf <3", password: null, icon: "gf" },
         'darnell' => { username: "Darnell", password: null, icon: "darnell" },
         'father' => { username: "Daddy D.", password: null, icon: "father" },
@@ -50,17 +55,17 @@ class LoginState extends MusicBeatState {
         isNewUserRequired = ClientPrefs.data.needToCreateNewUser;
 
         FlxTransitionableState.skipNextTransIn = true;
+        ShaderManager.getInstance().applyShaders();
 
         persistentUpdate = true;
         persistentDraw = true;
 
-        crtShader = new CRTShader(0.3, 0.55);
-        FlxG.camera.setFilters([new ShaderFilter(crtShader)]);
         FlxG.mouse.visible = true;
         FlxG.mouse.useSystemCursor = true;
         
         FlxG.sound.playMusic(Paths.music('loginMenu'), 0, true);
         FlxG.sound.music.fadeIn(4, 0, 0.7);
+
         FlxG.sound.play(Paths.sound('humming'), true);
 
         add(backgroundElements);
@@ -69,6 +74,7 @@ class LoginState extends MusicBeatState {
         add(userElements);
 
         renderLoginMenu();
+        checkGoldenFreddyAchievement();
     }
 
     override function update(elapsed:Float) {
@@ -89,21 +95,21 @@ class LoginState extends MusicBeatState {
         var loginPromptText:FlxSprite = new FlxSprite(229, 330).loadGraphic(Paths.image('menulogin/${theme}/beginText'));
         var dividerSprite:FlxSprite = new FlxSprite(616, 203).loadGraphic(Paths.image('menulogin/${theme}/divider'));
 
-        var powerButton:FlxButton = new FlxButton(43, 629, () -> {
+        dayCycleSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('menulogin/sun'));
+        dayCycleSprite.x = FlxG.width - (dayCycleSprite.width * 2);
+        dayCycleSprite.y = dayCycleSprite.height / 1.5;
+
+        clockText = new FlxText(0, 0, "00:00");
+        clockText.setFormat(null, 15, FlxColor.WHITE, CENTER);
+        clockText.x = dayCycleSprite.x + (dayCycleSprite.width / 2) - (clockText.width / 2);
+        clockText.y = dayCycleSprite.y + dayCycleSprite.height + 5;
+
+        updateTimeDisplay();
+
+        final powerButton:FlxButton = new FlxButton(43, 629, () -> {
             handlePowerButtonClick();
         });
         powerButton.loadGraphic(Paths.image('menulogin/${theme}/off_switch'));
-
-        var resetButton:FlxButton = new FlxButton(powerButton.x + powerButton.width, powerButton.y, "Refresh Login Menu", () -> {
-                ClientPrefs.data.userCreatedName = "";
-                ClientPrefs.data.userCreatedPassword = "";
-                ClientPrefs.data.userCreatedIcon = "";
-                ClientPrefs.data.needToCreateNewUser = true;
-                ClientPrefs.saveSettings();
-        
-                FlxG.switchState(new LoginState());
-        });
-        interfaceElements.add(resetButton);
 
         backgroundElements.add(loginBg);
         backgroundElements.add(loginBgGradient);
@@ -129,6 +135,9 @@ class LoginState extends MusicBeatState {
         interfaceElements.add(dividerSprite);
         interfaceElements.add(powerButton);
 
+        interfaceElements.add(clockText);
+        interfaceElements.add(dayCycleSprite);
+
         renderUsers();
     }
 
@@ -147,7 +156,7 @@ class LoginState extends MusicBeatState {
         if (FlxG.random.int(1, 100) == 87) {
             randomUsers.push("87");
         }
- 
+
         users.push(randomUsers.pop());
 
         for (i in 0...users.length) {
@@ -232,9 +241,21 @@ class LoginState extends MusicBeatState {
         FlxG.sound.play(Paths.sound('GoldenFreddyScream'));
         var goldenFreddy:FlxSprite = new FlxSprite(0, 0).loadGraphic(Paths.image('menulogin/fnaf/Golden_Freddy'));
         add(goldenFreddy);
+
+        if (ClientPrefs.data.ITSME == false) {
+            ClientPrefs.data.ITSME = true;
+            ClientPrefs.saveSettings();
+        }
+
         new FlxTimer().start(3, function(timer:FlxTimer) {
             Sys.exit(1);
         });
+    }
+
+    private function checkGoldenFreddyAchievement():Void {
+        if (ClientPrefs.data.ITSME) {
+            Achievements.unlock("five_night_feddy", true);
+        }
     }
 
     public function initLoadingScreen(message:String):Void {
@@ -293,6 +314,41 @@ class LoginState extends MusicBeatState {
                     cloud.x += CLOUD_SPEED;
             }
         }
+    }
+
+    private function updateTimeDisplay(?timer:FlxTimer):Void {
+        var currentDate = Date.now();
+        var currentHour = currentDate.getHours();
+        var currentMinute = currentDate.getMinutes();
+        var currentSeconds = currentDate.getSeconds();
+        var currentMillis = currentDate.getTime() % 1000;
+    
+        var cycleSprite = (currentHour >= 7 && currentHour < 19)
+            ? Paths.image('menulogin/sun')
+            : Paths.image('menulogin/moon');
+        
+        var nextUpdateTime = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth(),
+            currentDate.getDate() + ((currentHour >= 19) ? 1 : 0),
+            (currentHour >= 7 && currentHour < 19) ? 19 : 7,
+            0,
+            0
+        );
+    
+        var msUntilNextUpdate = nextUpdateTime.getTime() - currentDate.getTime();
+        
+        dayCycleSprite.loadGraphic(cycleSprite);
+    
+        var formattedHour = StringTools.lpad(Std.string(currentHour), "0", 2);
+        var formattedMinute = StringTools.lpad(Std.string(currentMinute), "0", 2);
+        clockText.text = '${formattedHour}:${formattedMinute}';
+    
+        var msUntilNextMinute = (60 - currentSeconds) * 1000 - currentMillis;
+        
+        new FlxTimer().start(msUntilNextMinute / 1000, (_) -> {
+            updateTimeDisplay();
+        });
     }
 
     private function flashingEffect(sprite:FlxSprite, fadeInDuration:Float, fadeOutDuration:Float):Void {

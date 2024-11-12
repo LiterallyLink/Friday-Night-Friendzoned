@@ -19,8 +19,7 @@ class ApplicationButton extends FlxSpriteGroup
     private var _button:FlxButton;
     private var _label:FlxText;
     private var _bounds:FlxRect;
-    private var _substateCallback:Class<FlxSubState>;
-    private var _currentSubState:FlxSubState;
+    private var _callback:Void->Void;
 
     private var _isDragging:Bool = false;
     private var _dragOffset:FlxPoint;
@@ -35,15 +34,14 @@ class ApplicationButton extends FlxSpriteGroup
     public static inline var BOUNDS_SNAP_DURATION:Float = 0.3;
     public static inline var SCALE_TWEEN_DURATION:Float = 0.2;
 
-    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?SubstateClass:Class<FlxSubState>)
+    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?Callback:Void->Void)
     {
         super(X, Y);
 
         _dragOffset = new FlxPoint();
         _startPosition = new FlxPoint(X, Y);
         _bounds = Bounds;
-        _substateCallback = SubstateClass;
-        _currentSubState = null;
+        _callback = Callback;
 
         initializeButton(ImagePath);
         if (LabelText != null)
@@ -169,17 +167,9 @@ class ApplicationButton extends FlxSpriteGroup
 
     private function onDoubleClick(sprite:FlxSprite):Void
     {
-        if (!_wasDragged && _substateCallback != null && _currentSubState == null)
+        if (!_wasDragged && _callback != null)
         {
-            var currentState = FlxG.state;
-            if (currentState != null)
-            {
-                _currentSubState = Type.createInstance(_substateCallback, []);
-                _currentSubState.closeCallback = () -> {
-                    _currentSubState = null;
-                };
-                currentState.openSubState(_currentSubState);
-            }
+            _callback();
         }
     }
 
@@ -212,7 +202,9 @@ class ApplicationButton extends FlxSpriteGroup
     private function initializeLabel(LabelText:String):Void
     {
         _label = new FlxText(0, 0, 0, LabelText, DEFAULT_FONT_SIZE);
-        _label.setFormat(null, DEFAULT_FONT_SIZE, FlxColor.WHITE, "center");
+        _label.setFormat(null, DEFAULT_FONT_SIZE, FlxColor.WHITE, "center", FlxTextBorderStyle.SHADOW, FlxColor.BLACK);
+        _label.setBorderStyle(FlxTextBorderStyle.SHADOW, FlxColor.BLACK, 2, 2);
+
         add(_label);
         updateLabelPosition();
     }
@@ -241,7 +233,7 @@ class ApplicationButton extends FlxSpriteGroup
         _startPosition = FlxDestroyUtil.put(_startPosition);
         _button = FlxDestroyUtil.destroy(_button);
         _label = FlxDestroyUtil.destroy(_label);
-        _currentSubState = null;
+        _callback = null;
         
         super.destroy();
     }

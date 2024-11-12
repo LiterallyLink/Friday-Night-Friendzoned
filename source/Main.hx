@@ -1,6 +1,5 @@
 package;
 
-import states.BootState;
 import states.DesktopState;
 #if android
 import android.content.Context;
@@ -42,7 +41,7 @@ class Main extends Sprite
 	public var game = {
 		width: 1280, // WINDOW width
 		height: 720, // WINDOW height
-		initialState: BootState, // initial game state
+		initialState: DesktopState, // initial game state
 		zoom: -1.0, // game state bounds
 		framerate: 60, // default framerate
 		skipSplash: true, // if the default flixel splash screen should be skipped
