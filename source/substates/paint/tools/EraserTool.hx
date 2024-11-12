@@ -4,8 +4,6 @@ import openfl.display.BitmapData;
 import flixel.util.FlxColor;
 import flixel.math.FlxPoint;
 
-import substates.paint.SoundManager;
-
 class EraserTool extends BaseTool {
     private var isErasing:Bool = false;
     private var lastPos:FlxPoint;
@@ -22,7 +20,6 @@ class EraserTool extends BaseTool {
         lastPos.set(x, y);
         eraseAtPosition(x, y);
     
-        SoundManager.playSound('paint/OnEraser');
     }
 
     override public function onMouseMove(x:Float, y:Float, color:Int):Void {
@@ -32,8 +29,6 @@ class EraserTool extends BaseTool {
             return;
         }
     
-        SoundManager.playSound('paint/MoveEraser', 2.0);
-
         eraseLine(
             Math.floor(lastPos.x), 
             Math.floor(lastPos.y),
@@ -46,8 +41,6 @@ class EraserTool extends BaseTool {
 
     override public function onMouseUp(x:Float, y:Float, color:Int):Void {
         if (isErasing) {
-            SoundManager.clearSoundCooldown('paint/MoveEraser');
-            SoundManager.playSound('paint/OffEraser');
             isErasing = false;
         }
     }
@@ -95,7 +88,7 @@ class EraserTool extends BaseTool {
 
     override public function cleanup():Void {
         isErasing = false;
-        SoundManager.clearSoundCooldown('paint/MoveEraser');
+
         if (lastPos != null) {
             lastPos.destroy();
             lastPos = null;
