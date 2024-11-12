@@ -7,7 +7,6 @@ import flixel.math.FlxPoint;
 class PencilTool extends BaseTool {
     private var isDrawing:Bool = false;
     private var lastPos:FlxPoint;
-    private var pixelSize:Int = 3;
     
     public function new(canvas:BitmapData) {
         super(canvas);
@@ -19,8 +18,6 @@ class PencilTool extends BaseTool {
         if (lastPos == null) lastPos = new FlxPoint(0, 0);
         lastPos.set(x, y);
         drawAtPosition(x, y, color);
-        
-        SoundManager.playSound('paint/OnPen');
     }
 
     override public function onMouseMove(x:Float, y:Float, color:Int):Void {
@@ -39,32 +36,14 @@ class PencilTool extends BaseTool {
         );
         
         lastPos.set(x, y);
-
-        SoundManager.playSound('paint/MovePen', 4);
     }
 
     override public function onMouseUp(x:Float, y:Float, color:Int):Void {
         isDrawing = false;
-
-        SoundManager.clearSoundCooldown('paint/MovePen');
-        SoundManager.playSound('paint/OffPen');
     }
 
     private function drawAtPosition(x:Float, y:Float, color:Int):Void {
         drawPixel(Math.floor(x), Math.floor(y), color);
-    }
-
-    private function drawPixel(x:Int, y:Int, color:Int):Void {
-        var halfSize:Int = Math.floor(pixelSize / 2);
-        
-        for (offsetX in -halfSize...halfSize + 1) {
-            for (offsetY in -halfSize...halfSize + 1) {
-                var px:Int = x + offsetX;
-                var py:Int = y + offsetY;
-                
-                canvas.setPixel32(px, py, color);
-            }
-        }
     }
 
     private function drawLine(x0:Int, y0:Int, x1:Int, y1:Int, color:Int):Void {
