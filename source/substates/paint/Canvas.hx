@@ -18,6 +18,8 @@ class Canvas extends FlxSprite {
     private var redoStack:Array<BitmapData>;
     private static final MAX_HISTORY:Int = 50;
 
+    private var isCurrentlyDrawing:Bool = false;
+
     public function new() {
         super();
         loadGraphic(Paths.image('menudesktop/applications/paint/canvas'));
@@ -38,51 +40,67 @@ class Canvas extends FlxSprite {
 
     private function createTools():Void {
         tools = new Map<DrawingTool, BaseTool>();
-		
+        
         tools.set(DrawingTool.Pencil, new PencilTool(bitmap));
-		tools.set(DrawingTool.Eraser, new EraserTool(bitmap));
-		tools.set(DrawingTool.Dropper, new DropperTool(bitmap));
-		tools.set(DrawingTool.Spraycan, new SpraycanTool(bitmap));
-		tools.set(DrawingTool.Line, new LineTool(bitmap));
-		tools.set(DrawingTool.Rectangle, new RectangleTool(bitmap));
-		tools.set(DrawingTool.Eclipse, new EclipseTool(bitmap));
+        tools.set(DrawingTool.Eraser, new EraserTool(bitmap));
+        tools.set(DrawingTool.Dropper, new DropperTool(bitmap));
+        tools.set(DrawingTool.Spraycan, new SpraycanTool(bitmap));
+        tools.set(DrawingTool.Line, new LineTool(bitmap));
+        tools.set(DrawingTool.Rectangle, new RectangleTool(bitmap));
+        tools.set(DrawingTool.Eclipse, new EclipseTool(bitmap));
 
-		setTool(DrawingTool.Pencil);
+        setTool(DrawingTool.Pencil);
     }
 
-	public function setTool(tool:DrawingTool):Void {
-		if (currentTool != null) {
-			currentTool.cleanup();
-			currentTool = null;
-		}
-		
-		currentTool = tools.get(tool);
-	}
+    public function setTool(tool:DrawingTool):Void {
+        if (currentTool != null) {
+            currentTool.cleanup();
+            currentTool = null;
+        }
+        
+        currentTool = tools.get(tool);
+        if (currentTool != null) {
+            currentTool.updateCanvas(bitmap);
+        }
+    }
 
-	public function handleMouseDown(x:Float, y:Float, color:Int):Void {
-		if (currentTool == null || !isInBounds(x, y)) {
-			return;
-		}
-		
-		currentTool.onMouseDown(x, y, color);
-		updateCanvas();
-	}
-
-    public function handleMouseMove(x:Float, y:Float, color:Int):Void {
+    public function handleMouseDown(x:Float, y:Float, color:Int):Void {
+        if (currentTool == null) return;
+        
         var clampedX = Math.max(0, Math.min(x, bitmap.width - 1));
         var clampedY = Math.max(0, Math.min(y, bitmap.height - 1));
         
-        if (currentTool == null) return;
+        if (isInBounds(x, y)) {
+            isCurrentlyDrawing = true;
+            currentTool.onMouseDown(clampedX, clampedY, color);
+            updateCanvas();
+        }
+    }
+
+    public function handleMouseMove(x:Float, y:Float, color:Int):Void {
+        if (currentTool == null || !isCurrentlyDrawing) return;
+        
+        var clampedX = Math.max(0, Math.min(x, bitmap.width - 1));
+        var clampedY = Math.max(0, Math.min(y, bitmap.height - 1));
+        
         currentTool.onMouseMove(clampedX, clampedY, color);
         updateCanvas();
     }
 
     public function handleMouseUp(x:Float, y:Float, color:Int):Void {
         if (currentTool == null) return;
-
-        currentTool.onMouseUp(x, y, color);
-        updateCanvas();
-        saveState();
+    
+        var clampedX = Math.max(0, Math.min(x, bitmap.width - 1));
+        var clampedY = Math.max(0, Math.min(y, bitmap.height - 1));
+        
+        if (isCurrentlyDrawing) {
+            currentTool.onMouseUp(clampedX, clampedY, color);
+            updateCanvas();
+            saveState();
+        }
+        
+        isCurrentlyDrawing = false;
+        currentTool.cleanup();
     }
 
     public function isInBounds(x:Float, y:Float):Bool {
@@ -97,9 +115,13 @@ class Canvas extends FlxSprite {
     public function undo():Bool {
         if (undoStack.length <= 1) return false;
         
-        redoStack.push(bitmap.clone());
-        undoStack.pop();
+        redoStack.push(undoStack.pop());
         bitmap = undoStack[undoStack.length - 1].clone();
+        
+        for (tool in tools) {
+            tool.updateCanvas(bitmap);
+        }
+        
         updateCanvas();
         return true;
     }
@@ -108,8 +130,13 @@ class Canvas extends FlxSprite {
         if (redoStack.length == 0) return false;
         
         var redoState = redoStack.pop();
-        bitmap = redoState;
+        bitmap = redoState.clone();
         undoStack.push(redoState.clone());
+        
+        for (tool in tools) {
+            tool.updateCanvas(bitmap);
+        }
+        
         updateCanvas();
         return true;
     }
