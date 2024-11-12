@@ -17,8 +17,6 @@ class SpraycanTool extends BaseTool {
     override public function onMouseDown(x:Float, y:Float, color:Int):Void {
         isDrawing = true;
         sprayPaint(x, y, color);
-
-        SoundManager.playSound('paint/OnSpray', 1);
     }
 
     override public function onMouseMove(x:Float, y:Float, color:Int):Void {
@@ -26,19 +24,14 @@ class SpraycanTool extends BaseTool {
 
         sprayTimer += FlxG.elapsed;
 
-        if (sprayTimer >= 1/30) {
+        if (sprayTimer >= 1/20) {
             sprayPaint(x, y, color);
             sprayTimer = 0;
-
-            SoundManager.playSound('paint/MoveSpray', 7);
         }
     }
 
     override public function onMouseUp(x:Float, y:Float, color:Int):Void {
         isDrawing = false;
-
-        SoundManager.clearSoundCooldown('paint/MoveSpray');
-        SoundManager.playSound('paint/OffSpray');
     }
 
     private function sprayPaint(x:Float, y:Float, color:Int):Void {    
