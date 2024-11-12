@@ -8,52 +8,54 @@ class RectangleTool extends BaseTool {
     private var isDrawing:Bool = false;
     private var startPos:FlxPoint;
     private var previewBitmap:BitmapData;
-    private var pixelSize:Int = 1;
     
     public function new(canvas:BitmapData) {
         super(canvas);
-        getPoint();
-    }
-
-    private function getPoint():Void {
-        if (startPos == null) {
-            startPos = FlxPoint.get(0, 0);
-        }
+        startPos = FlxPoint.get(0, 0);
     }
 
     override public function onMouseDown(x:Float, y:Float, color:Int):Void {
         isDrawing = true;
-        getPoint();
+        if (startPos == null) {
+            startPos = FlxPoint.get(0, 0);
+        }
         startPos.set(x, y);
+        
         cleanupPreview();
-        previewBitmap = canvas.clone();
+        if (canvas != null) {
+            previewBitmap = canvas.clone();
+        }
     }
 
     override public function onMouseMove(x:Float, y:Float, color:Int):Void {
-        if (!isDrawing || previewBitmap == null) return;
+        if (!isDrawing || canvas == null || startPos == null) return;
         
-        canvas.draw(previewBitmap);
-        
-        drawRectangle(
-            Math.floor(startPos.x), 
-            Math.floor(startPos.y),
-            Math.floor(x), 
-            Math.floor(y), 
-            color
-        );
+        if (previewBitmap != null) {
+            canvas.draw(previewBitmap);
+            
+            drawRectangle(
+                Math.floor(startPos.x), 
+                Math.floor(startPos.y),
+                Math.floor(x), 
+                Math.floor(y), 
+                color
+            );
+        }
     }
 
     override public function onMouseUp(x:Float, y:Float, color:Int):Void {
-        if (!isDrawing) return;
+        if (!isDrawing || canvas == null || startPos == null) return;
         
-        canvas.draw(previewBitmap);
-        drawRectangle(
-            Math.floor(startPos.x), 
-            Math.floor(startPos.y),
-            Math.floor(x), 
-            Math.floor(y), 
-            color
-        );
+        if (previewBitmap != null) {
+            canvas.draw(previewBitmap);
+            drawRectangle(
+                Math.floor(startPos.x), 
+                Math.floor(startPos.y),
+                Math.floor(x), 
+                Math.floor(y), 
+                color
+            );
+        }
         
         cleanupPreview();
         isDrawing = false;
@@ -65,10 +67,10 @@ class RectangleTool extends BaseTool {
         var x2:Int = Std.int(Math.max(startX, endX));
         var y2:Int = Std.int(Math.max(startY, endY));
         
-        drawLine(Std.int(x1), Std.int(y1), Std.int(x2), Std.int(y1), color); // Top
-        drawLine(Std.int(x2), Std.int(y1), Std.int(x2), Std.int(y2), color); // Right
-        drawLine(Std.int(x2), Std.int(y2), Std.int(x1), Std.int(y2), color); // Bottom
-        drawLine(Std.int(x1), Std.int(y2), Std.int(x1), Std.int(y1), color); // Left
+        drawLine(Std.int(x1), Std.int(y1), Std.int(x2), Std.int(y1), color);
+        drawLine(Std.int(x2), Std.int(y1), Std.int(x2), Std.int(y2), color);
+        drawLine(Std.int(x2), Std.int(y2), Std.int(x1), Std.int(y2), color);
+        drawLine(Std.int(x1), Std.int(y2), Std.int(x1), Std.int(y1), color);
     }
 
     private function drawLine(x0:Int, y0:Int, x1:Int, y1:Int, color:Int):Void {
@@ -91,19 +93,6 @@ class RectangleTool extends BaseTool {
             if (e2 < dx) {
                 err += dx;
                 y0 += sy;
-            }
-        }
-    }
-
-    private function drawPixel(x:Int, y:Int, color:Int):Void {
-        var halfSize:Int = Math.floor(pixelSize / 2);
-        
-        for (offsetX in -halfSize...halfSize + 1) {
-            for (offsetY in -halfSize...halfSize + 1) {
-                var px:Int = x + offsetX;
-                var py:Int = y + offsetY;
-                
-                canvas.setPixel32(px, py, color);
             }
         }
     }
