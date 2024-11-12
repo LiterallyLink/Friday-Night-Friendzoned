@@ -15,8 +15,6 @@ class DropperTool extends BaseTool {
         var newColor:Int;     
         newColor = getColorAt(x, y);
         PaintSubState.selectedColor = newColor;
-
-        SoundManager.playSound('paint/Dropper');
     }
 
     override public function onMouseMove(x:Float, y:Float, color:Int):Void {}
