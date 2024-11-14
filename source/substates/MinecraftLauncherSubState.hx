@@ -90,13 +90,11 @@ class MinecraftLauncherSubState extends MusicBeatSubstate
         
         add(mcLauncher);
 
-        DragManager.getInstance().registerDraggableGroup(mcLauncher, header);
     }
 
     override public function update(elapsed:Float):Void
     {
         super.update(elapsed);
-        DragManager.getInstance().update();
         
         var ctrlPressed:Bool = FlxG.keys.pressed.CONTROL;
         

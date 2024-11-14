@@ -48,13 +48,10 @@ class LoginWindowSubState extends FlxSubState {
     
         initLoginInputFields();
         add(loginWindowContainer);
-
-        DragManager.getInstance().registerDraggableGroup(loginWindowContainer, loginHeader);
     }
 
     override function update(elapsed:Float) {
         super.update(elapsed);
-        DragManager.getInstance().update();
     }
 
     private function initLoginWindow() {

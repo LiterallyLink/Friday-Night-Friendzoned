@@ -6,6 +6,7 @@ import flixel.FlxSprite;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.util.FlxSpriteUtil;
+import flixel.math.FlxPoint;
 
 import backend.window.composite.CompositeSprite;
 import substates.paint.Canvas;

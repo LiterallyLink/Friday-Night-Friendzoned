@@ -1,175 +1,115 @@
 package backend;
 
-import flixel.ui.FlxButton;
-import flixel.text.FlxText;
-import flixel.util.FlxColor;
+import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.input.mouse.FlxMouseEvent;
-import flixel.util.FlxDestroyUtil;
 import flixel.math.FlxPoint;
-import flixel.FlxG;
-import flixel.FlxSprite;
 import flixel.math.FlxRect;
-import flixel.tweens.FlxTween;
+import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
-import flixel.FlxSubState;
+import flixel.tweens.FlxTween;
+import flixel.ui.FlxButton;
+import flixel.util.FlxColor;
+import flixel.util.FlxDestroyUtil;
 
 class ApplicationButton extends FlxSpriteGroup
 {
+    public static inline var DEFAULT_FONT_SIZE:Int = 10;
+    public static inline var DEFAULT_LABEL_PADDING:Int = 0;
+
     private var _button:FlxButton;
     private var _label:FlxText;
     private var _bounds:FlxRect;
     private var _callback:Void->Void;
+    private var _onDoubleClick:Void->Void;
 
-    private var _isDragging:Bool = false;
-    private var _dragOffset:FlxPoint;
     private var _startPosition:FlxPoint;
-    private var _wasDragged:Bool = false;
+    private var _lastValidPosition:FlxPoint;
 
-    private var boundsTween:FlxTween;
-    private var scaleTween:FlxTween;
+    var scaleTween:FlxTween;
+    var boundsTween:FlxTween;
+    
+    final _scaleTweenDuration:Float = 0.2;
+    final _boundsSnapDuration:Float = 0.3;
 
-    public static inline var DEFAULT_FONT_SIZE:Int = 10;
-    public static inline var DEFAULT_LABEL_PADDING:Int = 0;
-    public static inline var BOUNDS_SNAP_DURATION:Float = 0.3;
-    public static inline var SCALE_TWEEN_DURATION:Float = 0.2;
-
-    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?Callback:Void->Void)
+    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?Callback:Void->Void, ?OnDoubleClick:Void->Void)
     {
         super(X, Y);
 
-        _dragOffset = new FlxPoint();
         _startPosition = new FlxPoint(X, Y);
+        _lastValidPosition = new FlxPoint(X, Y);
+        
         _bounds = Bounds;
         _callback = Callback;
+        _onDoubleClick = OnDoubleClick;
 
-        initializeButton(ImagePath);
+        addButton(ImagePath);
+
         if (LabelText != null)
-            initializeLabel(LabelText);
-        setupMouseEvents();
+            addLabel(LabelText);
+
+        DragManager.i().setButton(this);
     }
 
-    private function setupMouseEvents():Void
+    private function addButton(?ImagePath:String):Void
     {
-        FlxMouseEvent.add(_button, onMouseDown, null, onMouseOver, onMouseOut);
-        FlxMouseEvent.setMouseDoubleClickCallback(_button, onDoubleClick);
+        _button = new FlxButton();
+
+        if (ImagePath != null)
+            _button.loadGraphic(Paths.image(ImagePath));
+        add(_button);
     }
 
-    private function startDragging():Void
+    private function addLabel(LabelText:String):Void
     {
-        FlxG.stage.addEventListener(openfl.events.MouseEvent.MOUSE_MOVE, onMouseMove);
-        FlxG.stage.addEventListener(openfl.events.MouseEvent.MOUSE_UP, onGlobalMouseUp);
+        _label = new FlxText(0, 0, 0, LabelText, DEFAULT_FONT_SIZE);
+        _label.setFormat(null, DEFAULT_FONT_SIZE, FlxColor.WHITE, "center", FlxTextBorderStyle.SHADOW, FlxColor.BLACK);
+        _label.setBorderStyle(FlxTextBorderStyle.SHADOW, FlxColor.BLACK, 2, 2);
+
+        add(_label);
+        updateLabelPosition();
     }
 
-    private function stopDragging():Void
+    /*
+    ================
+       POSITIONING
+    ================
+    */
+
+    public function setScale(Scale:Float):Void
     {
-        FlxG.stage.removeEventListener(openfl.events.MouseEvent.MOUSE_MOVE, onMouseMove);
-        FlxG.stage.removeEventListener(openfl.events.MouseEvent.MOUSE_UP, onGlobalMouseUp);
-        tweenScale(1.0);
+        _button.scale.set(Scale, Scale);
+        _button.updateHitbox();
+        updateLabelPosition();
     }
 
-    private function onMouseDown(sprite:FlxSprite):Void
+    public function updatePosition(newX:Float, newY:Float):Void
     {
-        _isDragging = true;
-        _wasDragged = false;
-        _startPosition.set(x, y);
-        _dragOffset.set(FlxG.mouse.x - x, FlxG.mouse.y - y);
-        startDragging();
-    }
-    
-    private function onGlobalMouseUp(event:openfl.events.MouseEvent):Void
-    {
-        if (_isDragging)
+        if (isWithinBounds())
         {
-            _isDragging = false;
-            stopDragging();
+            _lastValidPosition.set(x, y);
+        }
 
-            if (_wasDragged && _bounds != null && !isWithinBounds())
-            {
-                tweenToPosition(_startPosition.x, _startPosition.y);
-            }
+        x = newX;
+        y = newY;
+
+        if (!isWithinBounds())
+        {
+            resetPosition();
         }
     }
 
-    private function tweenScale(targetScale:Float):Void
-        {
-            if (scaleTween != null && scaleTween.active)
-            {
-                scaleTween.cancel();
-            }
-    
-            scaleTween = FlxTween.tween(_button.scale, 
-                { x: targetScale, y: targetScale }, 
-                SCALE_TWEEN_DURATION,
-                {
-                    ease: FlxEase.quartOut,
-                    onUpdate: function(tween:FlxTween) {
-                        _button.updateHitbox();
-                        updateLabelPosition();
-                    }
-                }
-            );
-        }
-
-    private function tweenToPosition(targetX:Float, targetY:Float):Void
+    public function resetPosition():Void
     {
-        if (boundsTween != null && boundsTween.active)
-        {
-            boundsTween.cancel();
-        }
-
-        boundsTween = FlxTween.tween(this, 
-            { x: targetX, y: targetY }, 
-            BOUNDS_SNAP_DURATION, 
-            {
-                ease: FlxEase.elasticOut,
-                onUpdate: function(tween:FlxTween) {
-                    updateLabelPosition();
-                }
-            }
-        );
+        tweenToPosition(_lastValidPosition.x, _lastValidPosition.y);
     }
 
-    private function onMouseMove(event:openfl.events.MouseEvent):Void
+    private function updateLabelPosition():Void
     {
-        tweenScale(0.8);
-
-        if (FlxG.mouse.x < 0 || FlxG.mouse.x > FlxG.width ||
-            FlxG.mouse.y < 0 || FlxG.mouse.y > FlxG.height)
+        if (_label != null)
         {
-            _isDragging = false;
-            stopDragging();
-            tweenToPosition(_startPosition.x, _startPosition.y);
-            return;
-        }
-
-        var newX = FlxG.mouse.x - _dragOffset.x;
-        var newY = FlxG.mouse.y - _dragOffset.y;
-
-        if (newX != x || newY != y)
-        {
-            _wasDragged = true;
-            x = newX;
-            y = newY;
-            updateLabelPosition();
-        }
-    }
-
-    private function onMouseOver(sprite:FlxSprite):Void
-    {
-        // Add hover effects
-    }
-
-    private function onMouseOut(sprite:FlxSprite):Void
-    {
-        // Remove hover effects
-    }
-
-    private function onDoubleClick(sprite:FlxSprite):Void
-    {
-        if (!_wasDragged && _callback != null)
-        {
-            _callback();
+            _label.x = _button.x + (_button.width - _label.width) / 2;
+            _label.y = _button.y + _button.height + DEFAULT_LABEL_PADDING;
         }
     }
 
@@ -183,58 +123,55 @@ class ApplicationButton extends FlxSpriteGroup
                 x + width <= _bounds.right && 
                 y + height <= _bounds.bottom);
     }
+    
+    /*
+    ================
+       ANIMATIONS
+    ================
+    */
 
-    private function initializeButton(?ImagePath:String):Void
+    public function tweenScale(targetScale:Float):Void
     {
-        _button = new FlxButton(0, 0);
-        if (ImagePath != null)
-            _button.loadGraphic(Paths.image(ImagePath));
-        add(_button);
-    }
-
-    public function setScale(Scale:Float):Void
-    {
-        _button.scale.set(Scale, Scale);
-        _button.updateHitbox();
-        updateLabelPosition();
-    }
-
-    private function initializeLabel(LabelText:String):Void
-    {
-        _label = new FlxText(0, 0, 0, LabelText, DEFAULT_FONT_SIZE);
-        _label.setFormat(null, DEFAULT_FONT_SIZE, FlxColor.WHITE, "center", FlxTextBorderStyle.SHADOW, FlxColor.BLACK);
-        _label.setBorderStyle(FlxTextBorderStyle.SHADOW, FlxColor.BLACK, 2, 2);
-
-        add(_label);
-        updateLabelPosition();
-    }
-
-    private function updateLabelPosition():Void
-    {
-        if (_label != null)
+        if (scaleTween != null && scaleTween.active)
         {
-            _label.x = _button.x + (_button.width - _label.width) / 2;
-            _label.y = _button.y + _button.height + DEFAULT_LABEL_PADDING;
+            scaleTween.cancel();
         }
+
+        scaleTween = FlxTween.tween(_button.scale, 
+            { x: targetScale, y: targetScale }, 
+            _scaleTweenDuration,
+            {
+                ease: FlxEase.quartOut,
+                onUpdate: (tween:FlxTween) -> {
+                    _button.updateHitbox();
+                    updateLabelPosition();
+                }
+            }
+        );
     }
 
-    override public function destroy():Void
+    public function tweenToPosition(targetX:Float, targetY:Float):Void
     {
         if (boundsTween != null && boundsTween.active)
         {
             boundsTween.cancel();
-            boundsTween = null;
         }
 
-        FlxMouseEvent.remove(_button);
-        stopDragging(); // Ensure we clean up any active listeners
-        
-        _dragOffset = FlxDestroyUtil.put(_dragOffset);
-        _startPosition = FlxDestroyUtil.put(_startPosition);
-        _button = FlxDestroyUtil.destroy(_button);
-        _label = FlxDestroyUtil.destroy(_label);
-        _callback = null;
-        
-        super.destroy();
+        boundsTween = FlxTween.tween(this, 
+            { x: targetX, y: targetY }, 
+            _boundsSnapDuration, 
+            {
+                ease: FlxEase.elasticOut,
+                onUpdate: (tween:FlxTween) -> {
+                    updateLabelPosition();
+                }
+            }
+        );
     }
+
+    /*
+    ================
+     EVENT HANDLERS
+    ================
+    */
 }

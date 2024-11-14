@@ -1,70 +1,128 @@
 package backend;
 
-import flixel.FlxG;
 import flixel.FlxSprite;
-import flixel.group.FlxGroup;
-import flixel.group.FlxSpriteContainer;
 import flixel.math.FlxPoint;
+import flixel.FlxG;
+import flixel.math.FlxRect;
+import flixel.input.mouse.FlxMouseEvent;
+
+import backend.ApplicationButton;
+
+enum DragType {
+    NONE;
+    WINDOW_DRAG;
+    WINDOW_RESIZE;
+    APP_DRAG;
+}
 
 class DragManager
 {
     private static var instance:DragManager;
-    private var draggableGroups:Map<FlxSprite, FlxSpriteContainer> = new Map();
-    private var isDragging:Bool = false;
-    private var currentDragSprite:FlxSprite = null;
-    private var dragOffset:FlxPoint = new FlxPoint();
 
-    public static function getInstance():DragManager
-    {
+    public var isDragging:Bool = false;
+    private var isDragEnabled:Bool = true;
+
+    private var draggedApp:ApplicationButton = null;
+    private var draggedType:DragType = NONE;
+    private var dragOffset:FlxPoint = new FlxPoint();
+    private var dragStartPosition:FlxPoint = new FlxPoint();
+    private var dragThreshold:Float = 5;
+
+    private var buttons:Array<ApplicationButton> = [];
+
+    private function new() {}
+
+    public static function i():DragManager {
         if (instance == null)
             instance = new DragManager();
         return instance;
     }
 
-    private function new() {}
-
-    public function registerDraggableGroup(group:FlxSpriteContainer, dragSprite:FlxSprite):Void 
-    {
-        draggableGroups.set(dragSprite, group);
+    public function allowDragging():Void {
+        isDragEnabled = true;
     }
 
-    public function update():Void 
-    {
-        if (FlxG.mouse.justReleased) 
-        {
-            isDragging = false;
-            currentDragSprite = null;
-            return;
-        }
+    public function disableDragging():Void {
+        isDragEnabled = false;
+        resetDrag();
+    }
 
-        if (isDragging && currentDragSprite != null) 
-        {
-            var group = draggableGroups.get(currentDragSprite);
-            if (group != null) {
-                group.x = FlxG.mouse.x - dragOffset.x;
-                group.y = FlxG.mouse.y - dragOffset.y;
-            }
-            return;
-        }
+    private function resetDrag():Void {
+        isDragging = false;
+        draggedType = NONE;
+        draggedApp = null;
+    }
 
-        if (FlxG.mouse.justPressed) 
-        {
-            for (sprite in draggableGroups.keys()) 
-            {
-                if (sprite.overlapsPoint(FlxG.mouse.getPosition())) 
-                {
-                    isDragging = true;
-                    currentDragSprite = sprite;
-                    var group = draggableGroups.get(sprite);
-                    if (group != null) {
-                        dragOffset.set(
-                            FlxG.mouse.x - group.x,
-                            FlxG.mouse.y - group.y
-                        );
-                    }
-                    break;
-                }
-            }
+    public function setButton(button:ApplicationButton):Void {
+        if (!buttons.contains(button))
+            buttons.push(button);
+
+        FlxMouseEvent.add(button, onMouseDown);
+        FlxMouseEvent.setMouseDoubleClickCallback(button, onDoubleClick);
+    }
+
+    private function onDoubleClick(sprite:FlxSprite):Void {
+        if (!isDragging) {
+            trace('ass');
         }
     }
+    
+    private function onMouseDown(sprite:FlxSprite):Void {
+        if (!isDragEnabled) {
+            return;
+        }
+        
+        var button:ApplicationButton = cast sprite;
+        draggedApp = button;
+        draggedType = APP_DRAG;
+        
+        dragOffset.set(
+            FlxG.mouse.x - button.x,
+            FlxG.mouse.y - button.y
+        );
+        
+        dragStartPosition.set(FlxG.mouse.x, FlxG.mouse.y);
+    }
+
+	private function checkMouseReleased():Bool {
+		if (!FlxG.mouse.pressed) {
+			resetDrag();
+			return true;
+		}
+
+		return false;
+	}
+	
+	private function checkDragThreshold():Void {
+		var deltaX:Float = FlxG.mouse.x - dragStartPosition.x;
+		var deltaY:Float = FlxG.mouse.y - dragStartPosition.y;
+		var distanceMoved:Float = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+		
+		if (distanceMoved > dragThreshold) {
+			isDragging = true;
+		}
+	}
+	
+	private function updateDragPosition():Void {
+		var newX:Float = FlxG.mouse.x - dragOffset.x;
+		var newY:Float = FlxG.mouse.y - dragOffset.y;
+		
+		draggedApp.updatePosition(newX, newY);
+	}
+	
+	public function update():Void {
+		if (!isDragEnabled) return;
+		
+		if (draggedApp != null) {
+			if (checkMouseReleased()) return;
+			
+			if (!isDragging) {
+				checkDragThreshold();
+			}
+			
+			if (isDragging) {
+				updateDragPosition();
+			}
+		}
+	}
 }

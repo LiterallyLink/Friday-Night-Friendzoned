@@ -11,12 +11,14 @@ import flixel.math.FlxPoint;
 
 class LoginWindowSubState extends FlxSubState {
 
-    public function new(selectedUser:String, isNewUserRequired:Bool) {
+    public function new() {
         super();
     }
 
     override function create() {
         super.create();
+
+        
     }
 
     override function update(elapsed:Float) {

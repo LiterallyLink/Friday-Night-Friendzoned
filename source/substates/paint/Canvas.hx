@@ -115,8 +115,11 @@ class Canvas extends FlxSprite {
     public function undo():Bool {
         if (undoStack.length <= 1) return false;
         
-        redoStack.push(undoStack.pop());
-        bitmap = undoStack[undoStack.length - 1].clone();
+        var currentState = undoStack.pop();
+        redoStack.push(currentState);
+        
+        var previousState = undoStack[undoStack.length - 1];
+        bitmap = previousState.clone();
         
         for (tool in tools) {
             tool.updateCanvas(bitmap);
@@ -129,9 +132,17 @@ class Canvas extends FlxSprite {
     public function redo():Bool {
         if (redoStack.length == 0) return false;
         
+        if (bitmap != null) {
+            bitmap.dispose();
+        }
+        
         var redoState = redoStack.pop();
         bitmap = redoState.clone();
-        undoStack.push(redoState.clone());
+        
+        var undoState = redoState.clone();
+        undoStack.push(undoState);
+        
+        redoState.dispose();
         
         for (tool in tools) {
             tool.updateCanvas(bitmap);
@@ -142,11 +153,34 @@ class Canvas extends FlxSprite {
     }
 
     private function saveState():Void {
-        undoStack.push(bitmap.clone());
-        redoStack = [];
+        var newState = bitmap.clone();
+        undoStack.push(newState);
+        
+        while (redoStack.length > 0) {
+            var state = redoStack.pop();
+            state.dispose();
+        }
         
         while (undoStack.length > MAX_HISTORY) {
-            undoStack.shift();
+            var oldState = undoStack.shift();
+            oldState.dispose();
+        }
+    }
+
+    public function dispose():Void {
+        if (bitmap != null) {
+            bitmap.dispose();
+            bitmap = null;
+        }
+        
+        while (undoStack.length > 0) {
+            var state = undoStack.pop();
+            state.dispose();
+        }
+        
+        while (redoStack.length > 0) {
+            var state = redoStack.pop();
+            state.dispose();
         }
     }
 }

@@ -10,23 +10,28 @@ import flixel.addons.transition.FlxTransitionableState;
 
 import substates.MinecraftLauncherSubState;
 import substates.paint.PaintSubState;
+import substates.lethal.LethalPauseSubState;
 
 import backend.ShaderManager;
 import backend.ApplicationButton;
+import backend.DragManager;
 
 class DesktopState extends MusicBeatState
 {
-    private static inline var X_PADDING:Int = 6;
+    private var dragManager:DragManager;
+
+    private static inline var X_PADDING:Int = 5;
     private static inline var Y_PADDING:Int = 10;
 
+    public var taskbar:FlxSprite;
     private var clockGroup:FlxSpriteGroup;
 
     public var hasBrowserTransformed:Bool = ClientPrefs.data.hasBrowserTransformed;
-    public var applicationArray:Array<ApplicationButton> = [];
+    public var appArray:Array<ApplicationButton> = [];
 
 	override function create()
 	{	
-        //ShaderManager.getInstance().applyShaders();
+        ShaderManager.getInstance().applyShaders();
 
         var desktopTheme:String = ClientPrefs.data.desktopTheme;
 
@@ -34,17 +39,21 @@ class DesktopState extends MusicBeatState
         FlxG.sound.play(Paths.sound('humming'), true);
 
         var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menudesktop/bgs/${desktopTheme}'));
-        var taskbar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar'));
+        taskbar = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar'));
         taskbar.y = FlxG.height - taskbar.height;
 
         add(desktopBg);
         add(taskbar);
 
         createTaskbarButtons(taskbar);
+        createDesktopApplications();
 
-        var desktopBounds:FlxRect = new FlxRect(0, 0, FlxG.width, FlxG.height - taskbar.height);
-        createDesktopApplications(desktopBounds);
-        // createClock();
+        dragManager = DragManager.i();
+
+        for (button in appArray)
+        {
+            dragManager.setButton(button);
+        }
 	}
 
     private function createTaskbarButtons(taskbar:FlxSprite):Void
@@ -92,112 +101,93 @@ class DesktopState extends MusicBeatState
         }
     }
 
-    private function createDesktopApplications(desktopBounds):Void {
-        var appLethalCompany:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+    private function createDesktopApplications():Void {
+        var desktopBounds:FlxRect = new FlxRect(0, 0, FlxG.width, FlxG.height - taskbar.height);
+
+        var appLethalCompany:ApplicationButton = new ApplicationButton(0, 0,
             'menudesktop/applications/lethal_company',
             "Lethal Company",
-            desktopBounds,
+            desktopBounds
         );
         
-        var appMinecraftLauncher:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appMinecraftLauncher:ApplicationButton = new ApplicationButton(50, 0,
             'menudesktop/applications/mc',
             "Minecraft",
             desktopBounds,
-            () -> {}
             //openSubState(new MinecraftLauncherSubState())
         );
 
-        var appMoviePlayer:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appMoviePlayer:ApplicationButton = new ApplicationButton(100, 0,
             'menudesktop/applications/media_file',
             "FNa2023...\n.mov",
             desktopBounds,
         );
 
-        var appRecycleBin:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appRecycleBin:ApplicationButton = new ApplicationButton(150, 0,
             'menudesktop/applications/recycling_bin_empty',
             "Recycling Bin",
             desktopBounds,
         );
 
-        var appCredits:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appCredits:ApplicationButton = new ApplicationButton(200, 0,
             'menudesktop/applications/sticky_note',
             "Credits.txt",
             desktopBounds,
         );
 
-        var appBrowser:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appBrowser:ApplicationButton = new ApplicationButton(250, 0,
             'menudesktop/applications/web_browser',
             "Web Browser",
             desktopBounds,
         );
 
-        var appGavel:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appGavel:ApplicationButton = new ApplicationButton(300, 0,
             'menudesktop/applications/gavel',
             "Gavel",
             desktopBounds,
         );
 
-        var appKirby:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appKirby:ApplicationButton = new ApplicationButton(350, 0,
             'menudesktop/applications/kirby',
             "Abby Returns\nTo Dreamland",
             desktopBounds,
         );
 
-        var appUndertale:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appUndertale:ApplicationButton = new ApplicationButton(400, 0,
             'menudesktop/applications/undertale',
             "Undertale",
             desktopBounds,
         );
 
-        var appDOOM:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appDOOM:ApplicationButton = new ApplicationButton(500, 0,
             'menudesktop/applications/DOOM',
             "DOOM",
             desktopBounds,
-            () -> {}
         );
 
-        var appPaint:ApplicationButton = new ApplicationButton(
-            0,
-            0,
+        var appPaint:ApplicationButton = new ApplicationButton(550, 0,
             'menudesktop/applications/fzpaint',
             "FZPaint",
             desktopBounds,
-            () -> {
-                openSubState(new PaintSubState());
-            }
         );
 
-        //add(appLethalCompany);
-        //add(appMinecraftLauncher);
-        //add(appMoviePlayer);
-        //add(appRecycleBin);
-        //add(appCredits);
-        //add(appBrowser);
-        //add(appGavel);
-        //add(appKirby);
-        //add(appUndertale);
-        //add(appDOOM);
-        add(appPaint);
+        appArray = [
+            appLethalCompany,
+            appMinecraftLauncher,
+            appMoviePlayer,
+            appRecycleBin,
+            appCredits,
+            appBrowser,
+            appGavel,
+            appKirby,
+            appUndertale,
+            appDOOM,
+            appPaint
+        ];
+
+        for (app in appArray) {
+            add(app);
+        }
     }
 
     private function createClock():Void {
@@ -224,11 +214,6 @@ class DesktopState extends MusicBeatState
         add(clockGroup);
     }
 
-	override function destroy()
-	{
-		super.destroy();
-	}
-
 	override function update(elapsed:Float)
 	{
         if (FlxG.sound.music != null) {
@@ -236,5 +221,17 @@ class DesktopState extends MusicBeatState
         }
 
         super.update(elapsed);
+        DragManager.i().update();
+
+        if (FlxG.keys.justPressed.ESCAPE) 
+        {
+            openSubState(new LethalPauseSubState());
+        }
+
 	}
+    
+	override function destroy()
+    {
+        super.destroy();
+    }
 }
