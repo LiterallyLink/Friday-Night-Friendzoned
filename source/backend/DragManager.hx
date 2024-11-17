@@ -58,15 +58,26 @@ class DragManager
             buttons.push(button);
 
         FlxMouseEvent.add(button, onMouseDown);
+        FlxMouseEvent.setMouseClickCallback(button, onClick);
         FlxMouseEvent.setMouseDoubleClickCallback(button, onDoubleClick);
+    }
+
+    private function onClick(sprite:FlxSprite):Void {
+        if (!isDragging) {
+            var button:ApplicationButton = cast sprite;
+            if (button._onSingleClick != null)
+                button._onSingleClick();
+        }
     }
 
     private function onDoubleClick(sprite:FlxSprite):Void {
         if (!isDragging) {
-            trace('ass');
+            var button:ApplicationButton = cast sprite;
+            if (button._onDoubleClick != null)
+                button._onDoubleClick();
         }
     }
-    
+
     private function onMouseDown(sprite:FlxSprite):Void {
         if (!isDragEnabled) {
             return;

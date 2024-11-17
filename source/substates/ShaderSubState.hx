@@ -30,7 +30,7 @@ class ShaderSubState extends FlxSubState {
 
     override public function create():Void {
         super.create();
-        var shaders = ShaderManager.getInstance().settings;
+        var shaders = ShaderManager.i().settings;
 
         var window = BiosUtil.drawWindow(WINDOW_SCALE, WINDOW_SCALE);
         var windowStroke = BiosUtil.drawBorder(window, STROKE_THICKNESS);
@@ -67,7 +67,7 @@ class ShaderSubState extends FlxSubState {
     }
 
     private function updateShaderText():Void {
-        var shaders = ShaderManager.getInstance().settings;
+        var shaders = ShaderManager.i().settings;
         for (i in 0...shaders.length) {
             shaderTexts[i].text = '${shaders[i].name}. . . . . [ ${shaders[i].enabled ? '*' : ' '} ]';
             shaderTexts[i].color = (i == selectionIndex) ? FlxColor.YELLOW : FlxColor.WHITE;
@@ -87,8 +87,8 @@ class ShaderSubState extends FlxSubState {
         }
 
         if (FlxG.keys.justPressed.ENTER) {
-            var shader = ShaderManager.getInstance().settings[selectionIndex];
-            ShaderManager.getInstance().toggleShader(shader.name, !shader.enabled);
+            var shader = ShaderManager.i().settings[selectionIndex];
+            ShaderManager.i().toggleShader(shader.name, !shader.enabled);
             updateShaderText();
         }
 

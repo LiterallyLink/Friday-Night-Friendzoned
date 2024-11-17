@@ -31,8 +31,9 @@ class BootState extends MusicBeatState {
 
         super.create();
 
+        ShaderManager.i().applyShaders();
+
         loadPreferences();
-        ShaderManager.getInstance().applyShaders();
         loadBootSequence();
     }
 
@@ -144,8 +145,9 @@ class BootState extends MusicBeatState {
     }
 
     override function update(elapsed:Float) {
-        if (FlxG.sound.music != null)
+        if (FlxG.sound.music != null) {
             Conductor.songPosition = FlxG.sound.music.time;
+        }
 
         super.update(elapsed);
 

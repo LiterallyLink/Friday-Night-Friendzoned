@@ -2,6 +2,7 @@ package backend;
 
 import openfl.utils.Assets;
 import lime.utils.Assets as LimeAssets;
+import flixel.util.FlxSpriteUtil;
 
 class CoolUtil
 {
@@ -179,4 +180,13 @@ class CoolUtil
 	public static function boundedInt(value:Float, max:Int):Int {
 		return Math.floor(Math.min(Math.max(value, 0), max - 1));
 	}
+
+	public static function flashingEffect(sprite:FlxSprite, fadeInDuration:Float, fadeOutDuration:Float):Void {
+	   FlxSpriteUtil.fadeIn(sprite, fadeInDuration, true, function(tween:FlxTween):Void {
+		   FlxSpriteUtil.fadeOut(sprite, fadeOutDuration, function(tween:FlxTween):Void {
+			   flashingEffect(sprite, fadeInDuration, fadeOutDuration);
+		   });
+	   });
+	}
+	   
 }

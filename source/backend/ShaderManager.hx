@@ -45,7 +45,7 @@ class ShaderManager
         });
     }
     
-    public static function getInstance():ShaderManager 
+    public static function i():ShaderManager 
     {
         if (instance == null) {
             instance = new ShaderManager();
@@ -69,7 +69,7 @@ class ShaderManager
     public function applyShaders():Void 
     {
         if (FlxG.camera != null) {
-            var activeShaders:Array<BitmapFilter> = []; // Fixed: Specify correct type
+            var activeShaders:Array<BitmapFilter> = [];
 
             for (shader in settings) {
                 if (shader.enabled && shaderFilters.exists(shader.name)) {
@@ -77,7 +77,7 @@ class ShaderManager
                 }
             }
 
-            FlxG.camera.setFilters(activeShaders); // Fixed: Remove extra array brackets
+            FlxG.camera.setFilters(activeShaders);
         }
     }
     
@@ -93,7 +93,7 @@ class ShaderManager
         // Update actual shader
         switch (shaderName) {
             case "CRT":
-                var crtShader:CRTShader = cast shaders.get("CRT"); // Fixed: Use shaders map
+                var crtShader:CRTShader = cast shaders.get("CRT");
                 switch(paramName) {
                     case "warp":
                         crtShader.warp.value = [value];

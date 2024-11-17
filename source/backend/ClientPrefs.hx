@@ -6,6 +6,13 @@ import flixel.input.gamepad.FlxGamepadInputID;
 
 import states.BootState;
 
+typedef ProfileState = {
+    username:String,
+    password:String,
+    icon:String,
+    isRegistered:Bool
+}
+
 // Add a variable here and it will get automatically saved
 @:structInit class SaveVariables {
 	public var downScroll:Bool = false;
@@ -76,12 +83,14 @@ import states.BootState;
 	public var guitarHeroSustains:Bool = true;
 	public var discordRPC:Bool = true;
 
-	public var desktopTheme:String = 'tank';
+	public var pcTheme:String = 'default';
 
-	public var needToCreateNewUser:Bool = true;
-	public var userCreatedName:String = "";
-	public var userCreatedPassword:String = "";
-	public var userCreatedIcon:String = 'default';
+	public var profileData = {
+		username: "New User",
+		password: "",
+		icon: "newUser",
+		isRegistered: false
+	};
 
 	public var hasBrowserTransformed:Bool = false;
 	public var sfwMode:Bool = false;

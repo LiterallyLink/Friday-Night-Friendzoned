@@ -9,7 +9,7 @@ import flixel.group.FlxSpriteContainer;
 import flixel.addons.ui.FlxInputText;
 import flixel.math.FlxPoint;
 
-class LoginWindowSubState extends FlxSubState {
+class CreditsSubState extends FlxSubState {
 
     public function new() {
         super();

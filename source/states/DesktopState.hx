@@ -6,8 +6,7 @@ import flixel.ui.FlxButton;
 import flixel.util.FlxSpriteUtil;
 import flixel.group.FlxSpriteGroup;
 
-import flixel.addons.transition.FlxTransitionableState;
-
+import substates.StartMenuSubState;
 import substates.MinecraftLauncherSubState;
 import substates.paint.PaintSubState;
 import substates.lethal.LethalPauseSubState;
@@ -16,222 +15,226 @@ import backend.ShaderManager;
 import backend.ApplicationButton;
 import backend.DragManager;
 
+import backend.window.WindowManager;
+import backend.window.composite.CompositeSprite;
+import flixel.addons.transition.FlxTransitionableState;
+
+import flixel.util.FlxTimer;
+import flixel.util.FlxColor;
+
 class DesktopState extends MusicBeatState
 {
-    private var dragManager:DragManager;
+	private var dragManager:DragManager;
 
-    private static inline var X_PADDING:Int = 5;
-    private static inline var Y_PADDING:Int = 10;
+	private static inline var X_TASKBAR_PADDING:Int = 5;
+	private static inline var Y__TASKBAR_PADDING:Int = 10;
 
-    public var taskbar:FlxSprite;
-    private var clockGroup:FlxSpriteGroup;
+	public var taskbar:FlxSprite;
 
-    public var hasBrowserTransformed:Bool = ClientPrefs.data.hasBrowserTransformed;
-    public var appArray:Array<ApplicationButton> = [];
+	private var digitSprites:Array<FlxSprite>;
+	private var ampmSprite:FlxSprite;
+	private var currentHours:Int = -1;
+	private var currentMinutes:Int = -1;
+	private var currentAMPM:String = "";
 
 	override function create()
-	{	
-        ShaderManager.getInstance().applyShaders();
+	{
+		ShaderManager.i().applyShaders();
+		dragManager = DragManager.i();
 
-        var desktopTheme:String = ClientPrefs.data.desktopTheme;
-
-        FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
-        FlxG.sound.play(Paths.sound('humming'), true);
-
-        var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menudesktop/bgs/${desktopTheme}'));
-        taskbar = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar'));
-        taskbar.y = FlxG.height - taskbar.height;
-
-        add(desktopBg);
-        add(taskbar);
-
-        createTaskbarButtons(taskbar);
-        createDesktopApplications();
-
-        dragManager = DragManager.i();
-
-        for (button in appArray)
-        {
-            dragManager.setButton(button);
-        }
+		addMusic();
+		setDesktopBg();
+		setupTaskBar();
+		testWindowManager();
 	}
 
-    private function createTaskbarButtons(taskbar:FlxSprite):Void
-    {
-        var startButton = new FlxButton(X_PADDING, taskbar.y + Y_PADDING, () -> {
-            //
-        });
-        startButton.loadGraphic(Paths.image('menudesktop/taskbar/start'));
-        add(startButton);
-    
-        var BUTTON_PADDING:Int = X_PADDING + Y_PADDING;
-        var currentX:Float = startButton.x + startButton.width + BUTTON_PADDING;
-    
-        // Array of button configurations
-        var buttons:Array<{image:String, callback:()->Void}> = [
-            {
-                image: 'menudesktop/taskbar/photo_album',
-                callback: () -> {
-                    // FlxG.switchState(new PhotoAlbumState());
-                }
-            },
-            {
-                image: 'menudesktop/taskbar/music_player',
-                callback: () -> {
-                    // FlxG.switchState(new MusicPlayerState());
-                }
-            },
-            {
-                image: 'menudesktop/taskbar/achievements',
-                callback: () -> {
-                    // FlxG.switchState(new AchievementState());
-                }
-            }
-        ];
-    
-        // Create buttons from configuration
-        for (buttonConfig in buttons)
-        {
-            var button = new FlxButton(currentX, 0, buttonConfig.callback);
-            button.loadGraphic(Paths.image(buttonConfig.image));
-            button.y = taskbar.y + (taskbar.height / 2) - (button.height / 2);
-            
-            currentX += button.width + BUTTON_PADDING;
-            add(button);
-        }
-    }
-
-    private function createDesktopApplications():Void {
-        var desktopBounds:FlxRect = new FlxRect(0, 0, FlxG.width, FlxG.height - taskbar.height);
-
-        var appLethalCompany:ApplicationButton = new ApplicationButton(0, 0,
-            'menudesktop/applications/lethal_company',
-            "Lethal Company",
-            desktopBounds
-        );
-        
-        var appMinecraftLauncher:ApplicationButton = new ApplicationButton(50, 0,
-            'menudesktop/applications/mc',
-            "Minecraft",
-            desktopBounds,
-            //openSubState(new MinecraftLauncherSubState())
-        );
-
-        var appMoviePlayer:ApplicationButton = new ApplicationButton(100, 0,
-            'menudesktop/applications/media_file',
-            "FNa2023...\n.mov",
-            desktopBounds,
-        );
-
-        var appRecycleBin:ApplicationButton = new ApplicationButton(150, 0,
-            'menudesktop/applications/recycling_bin_empty',
-            "Recycling Bin",
-            desktopBounds,
-        );
-
-        var appCredits:ApplicationButton = new ApplicationButton(200, 0,
-            'menudesktop/applications/sticky_note',
-            "Credits.txt",
-            desktopBounds,
-        );
-
-        var appBrowser:ApplicationButton = new ApplicationButton(250, 0,
-            'menudesktop/applications/web_browser',
-            "Web Browser",
-            desktopBounds,
-        );
-
-        var appGavel:ApplicationButton = new ApplicationButton(300, 0,
-            'menudesktop/applications/gavel',
-            "Gavel",
-            desktopBounds,
-        );
-
-        var appKirby:ApplicationButton = new ApplicationButton(350, 0,
-            'menudesktop/applications/kirby',
-            "Abby Returns\nTo Dreamland",
-            desktopBounds,
-        );
-
-        var appUndertale:ApplicationButton = new ApplicationButton(400, 0,
-            'menudesktop/applications/undertale',
-            "Undertale",
-            desktopBounds,
-        );
-
-        var appDOOM:ApplicationButton = new ApplicationButton(500, 0,
-            'menudesktop/applications/DOOM',
-            "DOOM",
-            desktopBounds,
-        );
-
-        var appPaint:ApplicationButton = new ApplicationButton(550, 0,
-            'menudesktop/applications/fzpaint',
-            "FZPaint",
-            desktopBounds,
-        );
-
-        appArray = [
-            appLethalCompany,
-            appMinecraftLauncher,
-            appMoviePlayer,
-            appRecycleBin,
-            appCredits,
-            appBrowser,
-            appGavel,
-            appKirby,
-            appUndertale,
-            appDOOM,
-            appPaint
-        ];
-
-        for (app in appArray) {
-            add(app);
-        }
-    }
-
-    private function createClock():Void {
-        clockGroup = new FlxSpriteGroup();
-    
-        var innerWidth:Int = 162;
-        var innerHeight:Int = 51;
-        var borderWidth:Int = innerWidth + 6;
-        var borderHeight:Int = innerHeight + 6;
-    
-        var clockBorder:FlxSprite = new FlxSprite(0, 0);
-        clockBorder.makeGraphic(borderWidth, borderHeight, FlxColor.BLACK);
-    
-        FlxSpriteUtil.drawRect(clockBorder, 0, 0, borderWidth, 3, 0xFF333333);
-        FlxSpriteUtil.drawRect(clockBorder, 0, 0, 3, borderHeight, 0xFF333333);
-        FlxSpriteUtil.drawRect(clockBorder, 0, borderHeight - 3, borderWidth, 3, FlxColor.WHITE);
-        FlxSpriteUtil.drawRect(clockBorder, borderWidth - 3, 0, 3, borderHeight, FlxColor.WHITE);
-
-        clockBorder.x = FlxG.width - clockBorder.width + (X_PADDING + Y_PADDING);
-        clockBorder.y = FlxG.height - clockBorder.height - X_PADDING;
-    
-        clockGroup.add(clockBorder);
-    
-        add(clockGroup);
-    }
+	private function addMusic()
+	{
+		FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
+		FlxG.sound.play(Paths.sound('humming'), true);
+	}
 
 	override function update(elapsed:Float)
 	{
-        if (FlxG.sound.music != null) {
-            Conductor.songPosition = FlxG.sound.music.time;
-        }
+		super.update(elapsed);
+		DragManager.i().update();
 
-        super.update(elapsed);
-        DragManager.i().update();
-
-        if (FlxG.keys.justPressed.ESCAPE) 
-        {
-            openSubState(new LethalPauseSubState());
-        }
-
+		if (FlxG.sound.music != null)
+		{
+			Conductor.songPosition = FlxG.sound.music.time;
+		}
 	}
-    
+
+	private function setDesktopBg()
+	{
+		var desktopTheme:String = ClientPrefs.data.pcTheme;
+		var desktopBg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menudesktop/bgs/${desktopTheme}'));
+		add(desktopBg);
+	}
+
+	private function setupTaskBar()
+	{
+		taskbar = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar'));
+		taskbar.y = FlxG.height - taskbar.height;
+		add(taskbar);
+
+		this.createTaskbarButtons(taskbar);
+		this.createTaskbarClock(taskbar);
+	}
+
+	private function createTaskbarButtons(taskbar:FlxSprite):Void
+	{
+		var onDown = new FlxSprite(X_TASKBAR_PADDING, taskbar.y + Y__TASKBAR_PADDING, Paths.image('menudesktop/taskbar/start_down'));
+		onDown.visible = false;
+
+		var start = new FlxButton(X_TASKBAR_PADDING, taskbar.y + Y__TASKBAR_PADDING, () ->
+		{
+			onDown.visible = true;
+			openSubState(new StartMenuSubState(onDown, taskbar));
+		}).loadGraphic(Paths.image('menudesktop/taskbar/start'));
+
+		add(start);
+		add(onDown);
+	}
+
+	private function createTaskbarClock(taskbar)
+	{
+		var clockGroup = new FlxSpriteGroup();
+		digitSprites = [];
+
+		var date = Date.now();
+		var hours = date.getHours();
+		var minutes = date.getMinutes();
+		var ampm = "AM";
+
+		if (hours >= 12)
+		{
+			ampm = "PM";
+			if (hours > 12)
+			{
+				hours -= 12;
+			}
+		}
+		if (hours == 0)
+			hours = 12;
+
+		var dimmedDigit = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar/clock/dimmed_digit'));
+		var separator = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar/clock/semi_colon'));
+		var digitWidth = dimmedDigit.width;
+		var separatorWidth = separator.width;
+
+		for (i in 0...4)
+		{
+			var newDigit = dimmedDigit.clone();
+			var xPos = i * digitWidth + (i >= 2 ? separatorWidth : 0);
+			newDigit.setPosition(xPos, 0);
+			clockGroup.add(newDigit);
+
+			if (i == 1)
+			{
+				var newSeparator = separator.clone();
+				newSeparator.setPosition((i + 1) * digitWidth, 0);
+				clockGroup.add(newSeparator);
+			}
+
+			var digitSprite = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar/clock/0'));
+			digitSprite.setPosition(xPos, 0);
+			clockGroup.add(digitSprite);
+			digitSprites.push(digitSprite);
+		}
+
+		ampmSprite = new FlxSprite().loadGraphic(Paths.image('menudesktop/taskbar/clock/AM'));
+		ampmSprite.setPosition((4 * digitWidth) + separatorWidth, 0);
+		clockGroup.add(ampmSprite);
+
+		add(clockGroup);
+        clockGroup.screenCenter(XY);
+
+		startClockTimer();
+		updateClockSprites(hours, minutes, ampm);
+	}
+
+    private function startClockTimer() {
+        var date = Date.now();
+        var seconds = date.getSeconds();
+        var milliseconds = date.getTime() % 1000;
+        
+        var delay = (60 - seconds - (milliseconds / 1000));
+        
+        new FlxTimer().start(delay, function(tmr:FlxTimer) {
+            updateTime();
+            tmr.start(60, function(tmr:FlxTimer) {
+                updateTime();
+            }, 0);
+        });
+     }
+
+	private function updateTime()
+	{
+		var date = Date.now();
+		var hours = date.getHours();
+		var minutes = date.getMinutes();
+		var ampm = "AM";
+
+		if (hours >= 12)
+		{
+			ampm = "PM";
+			if (hours > 12)
+				hours -= 12;
+		}
+		if (hours == 0)
+			hours = 12;
+
+		if (hours != currentHours || minutes != currentMinutes || ampm != currentAMPM)
+		{
+			updateClockSprites(hours, minutes, ampm);
+			currentHours = hours;
+			currentMinutes = minutes;
+			currentAMPM = ampm;
+		}
+	}
+
+	private function updateClockSprites(hours:Int, minutes:Int, ampm:String)
+	{
+		digitSprites[0].loadGraphic(Paths.image('menudesktop/taskbar/clock/${Math.floor(hours / 10)}'));
+		digitSprites[1].loadGraphic(Paths.image('menudesktop/taskbar/clock/${hours % 10}'));
+
+		digitSprites[2].loadGraphic(Paths.image('menudesktop/taskbar/clock/${Math.floor(minutes / 10)}'));
+		digitSprites[3].loadGraphic(Paths.image('menudesktop/taskbar/clock/${minutes % 10}'));
+
+		ampmSprite.loadGraphic(Paths.image('menudesktop/taskbar/clock/$ampm'));
+	}
+
 	override function destroy()
-    {
-        super.destroy();
-    }
+	{
+		super.destroy();
+	}
+
+	private function testWindowManager():Void {
+		var composite = new CompositeSprite();
+		var backdrop = new FlxSprite();
+		var width = FlxG.random.int(200, 400);
+		var height = FlxG.random.int(200, 400);
+
+		backdrop.makeGraphic(width, height, FlxColor.WHITE);
+		composite.add(backdrop);    
+		composite.updateHitbox();
+				
+		var window = new WindowManager(composite);
+		
+		var randomX = FlxG.random.float(0, FlxG.width - width);
+		var randomY = FlxG.random.float(0, FlxG.height - height);
+				
+		window.setPosition(randomX, randomY);
+		add(window);
+				
+		/*
+		new FlxTimer().start(2, (_) -> {
+			trace('Destroying window at position: ${window.x},${window.y}');
+			remove(window);
+			window.destroy();
+			testWindowManager();
+		});
+		*/
+	}
 }

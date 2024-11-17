@@ -1,70 +1,34 @@
-package substates;
+import backend.window.composite.CompositeSprite;
 
-import flixel.FlxG;
-import flixel.FlxSprite;
-import flixel.FlxSubState;
-import flixel.ui.FlxButton;
-import flixel.text.FlxText;
-import flixel.group.FlxSpriteContainer;
-import flixel.addons.ui.FlxInputText;
-import flixel.math.FlxPoint;
-
-import states.LoginState;
-import states.DesktopState;
-
-import backend.DragManager;
-
-class LoginWindowSubState extends FlxSubState {
-    private var loginWindowContainer:FlxSpriteContainer = new FlxSpriteContainer();
+class LoginSubState extends FlxSubState {
+    private var windowComposite:CompositeSprite;
+    private var windowManager:WindowManager;
     private var passwordField:FlxInputText;
     private var usernameField:FlxInputText;
-    private var loginHeader:FlxSprite;
-    private var loginWindow:FlxSprite;
 
-    private var isWindowBeingDragged:Bool = false;
-    private var dragOffset:FlxPoint = new FlxPoint();
     private var selectedUser:String;
     private var isNewUserRequired:Bool;
 
     private var okBtn:FlxButton;
 
-    public function new(selectedUser:String, isNewUserRequired:Bool) {
-        super();
 
-        this.selectedUser = selectedUser;
-        this.isNewUserRequired = isNewUserRequired;
-    }
-
-    override function create() {
-        super.create();
-        initLoginWindow();
-        initLoginButtons();
+    private function initWindow() {
+        windowComposite = new CompositeSprite();
         
-        if (selectedUser == "newUser" && isNewUserRequired) {
-            initNewUser();
-        } else {
-            initPreExistingUser();
-        }
-    
-        initLoginInputFields();
-        add(loginWindowContainer);
-    }
-
-    override function update(elapsed:Float) {
-        super.update(elapsed);
-    }
-
-    private function initLoginWindow() {
-        loginWindow = new FlxSprite().loadGraphic(Paths.image('menulogin/login_window'));
+        var loginWindow = new FlxSprite().loadGraphic(Paths.image('menulogin/login_window'));
         loginWindow.screenCenter(XY);
+        windowComposite.add(loginWindow);
 
-        var loginHeaderPadding:Int = 6;
-        loginHeader = new FlxSprite().loadGraphic(Paths.image('menulogin/login_header'));
-        loginHeader.screenCenter(XY);
-        loginHeader.y -= (loginWindow.height / 2) - loginHeader.height + loginHeaderPadding;
+        var loginHeader = new FlxSprite().loadGraphic(Paths.image('menulogin/login_header'));
+        var headerPadding:Int = 6;
+        loginHeader.y = -(loginHeader.height - headerPadding);
+        windowComposite.add(loginHeader);
 
-        loginWindowContainer.add(loginHeader);
-        loginWindowContainer.add(loginWindow);
+        windowComposite.screenCenter(XY);
+        add(windowComposite);
+
+        windowManager = new WindowManager(windowComposite);
+        add(windowManager);
     }
 
     private function initLoginButtons() {
@@ -76,8 +40,8 @@ class LoginWindowSubState extends FlxSubState {
         });
         cancelBtn.loadGraphic(Paths.image('menulogin/login_cancel'));
         cancelBtn.setPosition(
-            (loginWindow.x + loginWindow.width) - (cancelBtn.width + buttonPadding),
-            (loginWindow.y + loginWindow.height) - (cancelBtn.height + buttonPadding)
+            windowComposite.width - (cancelBtn.width + buttonPadding),
+            windowComposite.height - (cancelBtn.height + buttonPadding)
         );
     
         okBtn = new FlxButton(0, 0, () -> {});
@@ -92,13 +56,13 @@ class LoginWindowSubState extends FlxSubState {
         });
         xBtn.loadGraphic(Paths.image('menulogin/login_x'));
         xBtn.setPosition(
-            (loginWindow.x + loginWindow.width) - (xBtn.width + xBtnPadding),
-            loginHeader.y + (loginHeader.height / 2) - (xBtn.height / 2)
+            windowComposite.width - (xBtn.width + xBtnPadding),
+            -(xBtn.height / 2)
         );
 
-        loginWindowContainer.add(cancelBtn);
-        loginWindowContainer.add(okBtn);
-        loginWindowContainer.add(xBtn);
+        windowComposite.add(cancelBtn);
+        windowComposite.add(okBtn);
+        windowComposite.add(xBtn);
     }
 
     private function initLoginInputFields() {
@@ -107,20 +71,20 @@ class LoginWindowSubState extends FlxSubState {
         var FONT_SIZE:Int = 17;
         var FIELD_WIDTH:Int = 350;
 
-        var xPos:Int = 510;
+        var xPos:Int = 185;
     
-        passwordField = new FlxInputText(xPos, 410, FIELD_WIDTH, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
+        passwordField = new FlxInputText(xPos, 185, FIELD_WIDTH, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
         passwordField.callback = keyPressCallback;
         passwordField.customFilterPattern = EREG_PATTERN;
         passwordField.maxLength = MAX_FIELD_LENGTH;
-        loginWindowContainer.add(passwordField);
+        windowComposite.add(passwordField);
             
         if (selectedUser == "newUser" && isNewUserRequired) {
-            usernameField = new FlxInputText(xPos, 368, FIELD_WIDTH, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
+            usernameField = new FlxInputText(xPos, 143, FIELD_WIDTH, "", FONT_SIZE, FlxColor.BLACK, FlxColor.WHITE);
             usernameField.callback = keyPressCallback;
             usernameField.customFilterPattern = EREG_PATTERN;
             usernameField.maxLength = MAX_FIELD_LENGTH;    
-            loginWindowContainer.add(usernameField);
+            windowComposite.add(usernameField);
             usernameField.hasFocus = true;
         } else {
             passwordField.hasFocus = true;
@@ -130,30 +94,25 @@ class LoginWindowSubState extends FlxSubState {
     private function initNewUser() {
         var loginIcon = new FlxSprite().loadGraphic(Paths.image('menulogin/icons/newUser'));
         loginIcon.scale.set(1.5, 1.5);
-        loginIcon.screenCenter(XY);
-    
-        loginIcon.y -= 80;
-        loginIcon.x -= 190;
+        loginIcon.x = 110;
+        loginIcon.y = 70;
     
         var welcomeText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menulogin/login_welcome'));
-        welcomeText.screenCenter(XY);
-        welcomeText.y -= 100;
-        welcomeText.x += 50;
-        loginWindowContainer.add(welcomeText);
+        welcomeText.x = 315;
+        welcomeText.y = 50;
     
         var loginText:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menulogin/login_text'));
-        loginText.screenCenter(XY);
-        loginText.y -= 60;
-        loginText.x += 20;
-        loginWindowContainer.add(loginText);
+        loginText.x = 285;
+        loginText.y = 90;
     
         var newUsername:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menulogin/login_new_username'));
-        newUsername.screenCenter(XY);
-        newUsername.x -= 180;
-        newUsername.y += 20;
-        loginWindowContainer.add(newUsername);
+        newUsername.x = 85;
+        newUsername.y = 170;
     
-        loginWindowContainer.add(loginIcon);
+        windowComposite.add(welcomeText);
+        windowComposite.add(loginText);
+        windowComposite.add(newUsername);
+        windowComposite.add(loginIcon);
     }
 
     private function initPreExistingUser() {
@@ -162,17 +121,16 @@ class LoginWindowSubState extends FlxSubState {
     
         var loginIcon = new FlxSprite().loadGraphic(Paths.image('menulogin/icons/${userIcon}'));
         loginIcon.scale.set(1.5, 1.5);
-        loginIcon.screenCenter(XY);
-    
-        loginIcon.y -= 50;
+        loginIcon.x = windowComposite.width / 2 - loginIcon.width / 2;
+        loginIcon.y = 100;
     
         var usernameText = new FlxText(userName, 30);
         usernameText.borderStyle = SHADOW;
-        usernameText.screenCenter(XY);
-        usernameText.y += 20;
+        usernameText.x = windowComposite.width / 2 - usernameText.width / 2;
+        usernameText.y = loginIcon.y + loginIcon.height + 20;
         
-        loginWindowContainer.add(usernameText);
-        loginWindowContainer.add(loginIcon);
+        windowComposite.add(usernameText);
+        windowComposite.add(loginIcon);
     }
 
     private function keyPressCallback(text:String, action:String):Void {

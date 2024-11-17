@@ -107,7 +107,7 @@ class BiosState extends MusicBeatState {
     private function addBiosBg():Void {
         var BIOS_BG_COLOR:Int = 0xFF1927F1;
         add(new FlxSprite().makeGraphic(FlxG.width, FlxG.height, BIOS_BG_COLOR));
-        ShaderManager.getInstance().applyShaders();
+        ShaderManager.i().applyShaders();
     }
 
     private function addBiosAudio():Void {
@@ -208,6 +208,9 @@ class BiosState extends MusicBeatState {
             updateMenuIndex(1);
         } else if (FlxG.keys.justPressed.ENTER) {
             MENU_OPTIONS[biosIndex].callback();
+        } else if (FlxG.keys.justPressed.F10) {
+            FlxG.sound.music.stop();
+            MusicBeatState.switchState(new BootState());
         }
     }
 

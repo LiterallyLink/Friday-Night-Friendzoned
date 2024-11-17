@@ -20,8 +20,9 @@ class ApplicationButton extends FlxSpriteGroup
     private var _button:FlxButton;
     private var _label:FlxText;
     private var _bounds:FlxRect;
-    private var _callback:Void->Void;
-    private var _onDoubleClick:Void->Void;
+    
+    public var _onSingleClick:Void->Void;
+    public var _onDoubleClick:Void->Void;
 
     private var _startPosition:FlxPoint;
     private var _lastValidPosition:FlxPoint;
@@ -32,7 +33,7 @@ class ApplicationButton extends FlxSpriteGroup
     final _scaleTweenDuration:Float = 0.2;
     final _boundsSnapDuration:Float = 0.3;
 
-    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?Callback:Void->Void, ?OnDoubleClick:Void->Void)
+    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?OnSingleClick:Void->Void, ?OnDoubleClick:Void->Void)
     {
         super(X, Y);
 
@@ -40,7 +41,7 @@ class ApplicationButton extends FlxSpriteGroup
         _lastValidPosition = new FlxPoint(X, Y);
         
         _bounds = Bounds;
-        _callback = Callback;
+        _onSingleClick = OnSingleClick;
         _onDoubleClick = OnDoubleClick;
 
         addButton(ImagePath);
@@ -174,4 +175,12 @@ class ApplicationButton extends FlxSpriteGroup
      EVENT HANDLERS
     ================
     */
+
+    public function setOnSingleClick(callback:Void->Void):Void {
+        _onSingleClick = callback;
+    }
+
+    public function setOnDoubleClick(callback:Void->Void):Void {
+        _onDoubleClick = callback;
+    }
 }
