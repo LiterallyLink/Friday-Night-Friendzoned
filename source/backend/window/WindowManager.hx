@@ -1,10 +1,14 @@
 package backend.window;
 
+import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
-import flixel.FlxG;
 import flixel.input.mouse.FlxMouseEvent;
-import backend.window.composite.CompositeSprite;
+import flixel.input.mouse.FlxMouseButton.FlxMouseButtonID;
+import flixel.math.FlxPoint;
+import flixel.math.FlxRect;
+
+import backend.composite.CompositeSprite;
 
 enum ResizeDirection {
     NONE;
@@ -19,12 +23,16 @@ enum ResizeDirection {
 }
 
 class WindowManager extends FlxSpriteGroup {
+    private static inline var DRAG_THRESHOLD:Float = 5;
+    private static inline var DRAG_THRESHOLD_SQUARED:Float = DRAG_THRESHOLD * DRAG_THRESHOLD;
+
     private var composite:CompositeSprite;
+    private var dragHandle:FlxSprite;
+    public var draggable:Bool = true;
+    public var resizable:Bool = true;
 
     private var baseWidth:Float;
     private var baseHeight:Float;
-
-    private var currentResizeDirection:ResizeDirection = NONE;
 
     private var topLeftCorner:FlxSprite;
     private var topMiddle:FlxSprite;
@@ -35,19 +43,53 @@ class WindowManager extends FlxSpriteGroup {
     private var bottomMiddle:FlxSprite;
     private var bottomRightCorner:FlxSprite;
 
-    public function new(composite:CompositeSprite) {
+    private var lastCompositeX:Float;
+    private var lastCompositeY:Float;
+
+    private var isDragging:Bool = false;
+    private var isMouseDown:Bool = false;
+    private var dragStartPosition:FlxPoint;
+    private var dragOffset:FlxPoint;
+    private var bounds:FlxRect;
+
+    public function new(composite:CompositeSprite, ?bounds:FlxRect = null) {
         super();
         
         this.composite = composite;
+        this.bounds = bounds;
         
         add(composite);
 
         this.baseWidth = composite.width;
         this.baseHeight = composite.height;
+        
+        this.lastCompositeX = composite.x;
+        this.lastCompositeY = composite.y;
 
-        createBorders();
-        updateBorderPositions();
-        setupResizeHandlers();
+        dragStartPosition = FlxPoint.get();
+        dragOffset = FlxPoint.get();
+    }
+
+    override public function update(elapsed:Float):Void {
+        super.update(elapsed);
+        
+        if (isMouseDown && dragHandle != null && !isDragging) {
+            checkDragThreshold();
+        }
+        
+        if (!FlxG.mouse.pressed) {
+            isDragging = false;
+            isMouseDown = false;
+        }
+        
+        if (isDragging && FlxG.mouse.pressed) {
+            updateDragPosition();
+        }
+        
+        if (composite.x != lastCompositeX || composite.y != lastCompositeY) {
+            lastCompositeX = composite.x;
+            lastCompositeY = composite.y;
+        }
     }
 
     private function createBorders():Void {
@@ -84,56 +126,60 @@ class WindowManager extends FlxSpriteGroup {
         add(rightMiddle);
     }
 
-    private function setupResizeHandlers():Void {
-        FlxMouseEvent.add(topLeftCorner, null, null, onResizeHover, onResizeExit, false, true, false);
-        FlxMouseEvent.add(topMiddle, null, null, onResizeHover, onResizeExit, false, true, false);
-        FlxMouseEvent.add(topRightCorner, null, null, onResizeHover, onResizeExit, false, true, false);
+    public function createDragHandle(width:Float, height:Float, xPos:Float, yPos:Float, ?debug:Bool = false):Void {
+        dragHandle = new FlxSprite();
         
-        FlxMouseEvent.add(leftMiddle, null, null, onResizeHover, onResizeExit, false, true, false);
-        FlxMouseEvent.add(rightMiddle, null, null, onResizeHover, onResizeExit, false, true, false);
+        var color:Int = debug ? 0x33FF0000 : 0x01000000;
+        dragHandle.makeGraphic(Std.int(width), Std.int(height), color);
         
-        FlxMouseEvent.add(bottomLeftCorner, null, null, onResizeHover, onResizeExit, false, true, false);
-        FlxMouseEvent.add(bottomMiddle, null, null, onResizeHover, onResizeExit, false, true, false);
-        FlxMouseEvent.add(bottomRightCorner, null, null, onResizeHover, onResizeExit, false, true, false);
+        dragHandle.x = xPos;
+        dragHandle.y = yPos;
+        
+        composite.add(dragHandle);
+        
+        FlxMouseEvent.add(dragHandle, onMouseDown, onMouseUp, null, null, false, true, false, [FlxMouseButtonID.LEFT, FlxMouseButtonID.RIGHT]);
     }
 
-    private function onResizeHover(sprite:FlxSprite):Void {
-        currentResizeDirection = if (sprite == topLeftCorner) TOP_LEFT
-            else if (sprite == topMiddle) TOP
-            else if (sprite == topRightCorner) TOP_RIGHT
-            else if (sprite == leftMiddle) LEFT
-            else if (sprite == rightMiddle) RIGHT
-            else if (sprite == bottomLeftCorner) BOTTOM_LEFT
-            else if (sprite == bottomMiddle) BOTTOM
-            else if (sprite == bottomRightCorner) BOTTOM_RIGHT
-            else NONE;
-            
-        updateMouseCursor(currentResizeDirection);
-    }
+    private function onMouseDown(sprite:FlxSprite):Void {
+        if (!draggable || FlxG.mouse.justPressedRight) {
+            return;
+        }
 
-    private function onResizeExit(sprite:FlxSprite):Void {
-        trace('on resize exit');
-        currentResizeDirection = NONE;
-        updateMouseCursor(NONE);
-    }
-
-    private function updateMouseCursor(direction:ResizeDirection):Void {
-        var cursor:FlxSprite = new FlxSprite();
+        isMouseDown = true;
+        isDragging = false;
         
-        switch (direction) {
-            case LEFT, RIGHT:
-                cursor.loadGraphic(Paths.image('cursors/resize-horizontal'));
-            case TOP, BOTTOM:
-                cursor.loadGraphic(Paths.image('cursors/resize-vertical'));
-            case TOP_LEFT, BOTTOM_RIGHT:
-                cursor.loadGraphic(Paths.image('cursors/resize-nwse'));
-            case TOP_RIGHT, BOTTOM_LEFT:
-                cursor.loadGraphic(Paths.image('cursors/resize-nesw'));
-            case NONE:
-                cursor.loadGraphic(Paths.image('cursors/default'));
+        dragStartPosition.set(FlxG.mouse.x, FlxG.mouse.y);
+        dragOffset.set(FlxG.mouse.x - composite.x, FlxG.mouse.y - composite.y);
+    }
+    
+    private function onMouseUp(sprite:FlxSprite):Void {
+        isDragging = false;
+        isMouseDown = false;
+    }
+
+    private function checkDragThreshold():Void {
+        var deltaX:Float = FlxG.mouse.x - dragStartPosition.x;
+        var deltaY:Float = FlxG.mouse.y - dragStartPosition.y;
+        var distanceSquared:Float = deltaX * deltaX + deltaY * deltaY;
+                
+        if (distanceSquared > DRAG_THRESHOLD_SQUARED) {
+            isDragging = true;
+        }
+    }
+    
+    private function updateDragPosition():Void {
+        var newX:Float = FlxG.mouse.x - dragOffset.x;
+        var newY:Float = FlxG.mouse.y - dragOffset.y;
+        
+        if (bounds != null) {
+            newX = Math.max(bounds.x, Math.min(newX, 
+                bounds.right - composite.width));
+                
+            newY = Math.max(bounds.y, Math.min(newY, 
+                bounds.bottom - composite.height));
         }
         
-        FlxG.mouse.load(cursor.pixels);
+        composite.setPosition(newX, newY);
     }
 
     private function updateBorderPositions():Void {
@@ -181,8 +227,21 @@ class WindowManager extends FlxSpriteGroup {
         rightMiddle.setPosition(bounds.x + bounds.width - rightMiddle.width, bounds.y + topRightCorner.height);
     }
 
-    override public function update(elapsed:Float):Void {
-        super.update(elapsed);
-        updateBorderPositions();
+    override public function destroy():Void {
+        if (dragStartPosition != null) {
+            dragStartPosition.put();
+        }
+        if (dragOffset != null) {
+            dragOffset.put();
+        }
+        if (bounds != null) {
+            bounds.put();
+        }
+
+        if (dragHandle != null) {
+            FlxMouseEvent.remove(dragHandle);
+        }
+
+        super.destroy();
     }
 }

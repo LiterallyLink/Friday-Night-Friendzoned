@@ -11,7 +11,7 @@ import states.LoginState;
 import states.DesktopState;
 
 import backend.window.WindowManager;
-import backend.window.composite.CompositeSprite;
+import backend.composite.CompositeSprite;
 
 class LoginSubState extends FlxSubState {
     private var window:WindowManager;
@@ -52,9 +52,14 @@ class LoginSubState extends FlxSubState {
 
         createWindow();
         window = new WindowManager(composite);
+        window.createDragHandle(515, 20, 10, 10, true);
         window.screenCenter(XY);
 
-        user == "newUser" && !ClientPrefs.data.profileData.isRegistered ? logIntoProfile() : createNewProfile();
+        if (ClientPrefs.data.profileData.isRegistered) {
+            logIntoProfile();
+        } else {
+            createNewProfile();
+        }
 
         add(window);
     }
@@ -84,7 +89,7 @@ class LoginSubState extends FlxSubState {
 
         var EREG_PATTERN = new EReg("[^a-zA-Z0-9]", "g");
 
-        usernameField = new FlxInputText(140, 164, 350, "", 20, 0xFF000000, 0xFFFFFFFF);
+        usernameField = new FlxInputText(140, 163, 350, "", 20, 0xFF000000, 0xFFFFFFFF);
         usernameField.hasFocus = true;
         usernameField.backgroundColor = 0xFFFFFFFF;
         usernameField.textField.background = true;
@@ -106,14 +111,23 @@ class LoginSubState extends FlxSubState {
     }
 
     private function logIntoProfile() {
-        // TODO: Implement existing user login UI
-        /*
-        Example implementation:
-        1. Show user icon based on selected user
-        2. Display username
-        3. Add password field only
-        4. Add login buttons
-        */
+        var icon = new FlxSprite().loadGraphic(Paths.image('menulogin/icons/${user}'));
+        icon.scale.set(1.5, 1.5);
+        icon.updateHitbox();
+        composite.add(icon);
+
+        var EREG_PATTERN = new EReg("[^a-zA-Z0-9]", "g");
+
+        passwordField = new FlxInputText(140, 225, 350, "", 20, 0xFF000000, 0xFFFFFFFF);
+        passwordField.backgroundColor = 0xFFFFFFFF;
+        passwordField.textField.background = true;
+        passwordField.customFilterPattern = EREG_PATTERN;
+        passwordField.maxLength = 14;
+        composite.add(passwordField);
+
+        passwordField.callback = keyPressCallback;
+
+        addLoginButtons();
     }
 
     private function addLoginButtons() {

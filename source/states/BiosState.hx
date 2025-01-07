@@ -10,7 +10,7 @@ import flixel.util.FlxSpriteUtil;
 import backend.ShaderManager;
 
 import substates.ShaderSubState;
-import substates.AchievementsSubState;
+import substates.bios.AchievementsSubState;
 
 typedef MenuOption = {
     label:String,

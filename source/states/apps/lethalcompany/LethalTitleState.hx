@@ -4,9 +4,11 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.text.FlxText;
 import flixel.util.FlxColor;
-import flixel.ui.FlxButton;
 import flixel.util.FlxSpriteUtil;
+import flixel.ui.FlxButton;
 import flixel.graphics.FlxGraphic;
+import flixel.tweens.FlxTween;
+import flixel.tweens.FlxEase;
 
 import states.DesktopState;
 import substates.lethal.LethalSettingsSubState;
@@ -17,7 +19,7 @@ private typedef MenuItem = {
     button:FlxButton,
     text:FlxText
 }
-
+ 
 class LethalTitleState extends MusicBeatState {
     private static inline final SELECTED_TEXT_SIZE:Int = 55;
     private static inline final DEFAULT_TEXT_SIZE:Int = 50;
@@ -28,6 +30,69 @@ class LethalTitleState extends MusicBeatState {
     
     private final font:String = Paths.font("LethalCompanyFont.ttf");
 
+    public static var SPLASH_TEXTS:Array<String> = [
+        "OSHA violations? That's the least of our concerns",
+        "Out of office reply: Currently being chased.",
+        "We're understaffed... and there's a reason for that.",
+        "401(k)illed in action.",
+        "Sick days require proof of dismemberment.",
+        "Lost and Found: Several limbs, a stop sign, and Dave's lunch box.",
+        "We value our employees... at exactly 11 credits each.",
+        "Spread the word",
+        "Barber took a little too much off the top... of my body.",
+        "Now on Only Company:\nIndustrial-chic meets eldritch horror.",
+        "Sorry to hear about your coworker... but hey!\nWe have some extra hours for you now!",
+        "Masked and afraid",
+        "The facilities return policy is in a body bag",
+        "Company Motto: What doesn't kill you... probably will next time.",
+        "Our insurance doesn't cover that... or that... or anything really.",
+        "Coilhead doesn't know what the definition of 'personal space' is",
+        "Mind the mines, friend of mine!",
+        "No overtime until you find us more clocks!",
+        "Our 8 figured boss has ate figures, but at least he makes 8 figures!",
+        "We love the Company! The Company!",
+        "I heard the developer is a FURRY cool person!",
+        "This would be a lot easier if we got paid by the hour...",
+        "The Biggy busy 'Itsy Bitsy' bit me!",
+        "Waste funds for guns. Waste scrap on crap!",
+        "Pop! Goes the Lethal!",
+        "Buttin' butts with Butlers",
+        "Spoiler Alert! The Coil-Head hurts!",
+        "Why do I hear a baby crying...?",
+        "What's wrong? It's just your lesser Jester with a headful gesture",
+        "We're not responsible if you run out of ship fuel",
+        "Wattup dawg! gets absolutely mauled",
+        "Batteries not included!",
+        "You're in deep.",
+        "Lost your badge? Don't worry, you'll be unrecognizable anyway.",
+        "Thumper?\nI hardly know er!",
+        "Every shift is a graveyard shift.",
+        "The company handbook forgot to mention the monsters.",
+        "Clock in, freak out, clock out, repeat.",
+        "Remember, the break room isn't safe either.",
+        "Employee of the month? Not likely.",
+        "Employee benefits include adrenaline and regret.",
+        "Your PTO request has been denied— again.",
+        "The only promotion here is to the afterlife.",
+        "First rule: don't look back\nSecond rule: too late.",
+        "HR can't help you outrun that.",
+        "Congratulations, you're expendable!",
+        "Thumper never skips leg day.",
+        "Nutcracker is more into cracking spines than nuts.",
+        "The Eyeless Dog sees everything you don't.",
+        "A Rubber Ducky?\nSqueak your way to safety.",
+        "Found a Stop Sign?\nToo bad monsters can't read.",
+        "Magic 7 Ball says: 'Signs point to danger.'",
+        "Buying a Walkie Talkie?\nShare your last words in real-time!",
+        "Our gratitude is as empty as your wallet!",
+        "Home is where the haul is!",
+        "My overtime does overtime!",
+        "Don't miss the quota!",
+        "Tips will not be given!",
+        "Have you had an accident at work that wasn't your fault? No you haven't! It absolutely was your fault!",
+        "Ghost Girl? Hear me out."
+    ];
+
     private final titleItems:Array<MenuItem>;
     private var currentIndex:Int = 0;
     private var isShowingPopup:Bool = false;
@@ -35,14 +100,15 @@ class LethalTitleState extends MusicBeatState {
 
     private var bg:FlxSprite;
     private var logo:FlxSprite;
-    private var border:FlxSprite;
-    
+    private var border:FlxSprite;    
     private var selector:FlxSprite;
+    private var popupBox:FlxSprite;
+
     private var version:FlxText;
     private var loadingText:FlxText;
-    
-    private var popupBox:FlxSprite;
+    private var splashText:FlxText;
     private var popupText:FlxText;
+
     private var continueButton:FlxButton;
     private var continueBg:FlxSprite;
 
@@ -97,6 +163,22 @@ class LethalTitleState extends MusicBeatState {
         version.scale.set(TEXT_SCALE, TEXT_SCALE);
         version.antialiasing = true;
         add(version);
+        
+        splashText = new FlxText(0, 0, 500, SPLASH_TEXTS[Std.random(SPLASH_TEXTS.length)]);
+        splashText.setFormat(font, 35, 0xFFFD9C45, CENTER);
+        splashText.setBorderStyle(FlxTextBorderStyle.SHADOW, 0xFF000000, 2);
+        splashText.antialiasing = true;
+        
+        splashText.angle = -15;
+        splashText.x = logo.x + logo.width - (splashText.width / 2);
+        splashText.y = logo.y + logo.height - splashText.height;
+        
+        FlxTween.tween(splashText.scale, { x: 1.1, y: 1.1 }, 0.3, {
+            ease: FlxEase.sineInOut,
+            type: PINGPONG,
+        });
+        
+        add(splashText);
     }
     
     private function createSelector():Void {

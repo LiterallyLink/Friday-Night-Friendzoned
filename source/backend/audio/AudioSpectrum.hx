@@ -18,7 +18,7 @@ class AudioSpectrum extends FlxGroup
     private static inline var NUM_BARS:Int = 100;
     private static inline var MAX_BAR_HEIGHT:Float = 300;
     private static inline var SMOOTHING_FACTOR:Float = 0.20;
-    private static inline var AMPLITUDE_MULTIPLIER:Float = 8000;
+    private static inline var AMPLITUDE_MULTIPLIER:Float = 4000;
  
     // Frequency band constants
     private static inline var SUB_BASS_FREQ:Float = 20;

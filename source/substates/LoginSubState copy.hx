@@ -1,4 +1,4 @@
-import backend.window.composite.CompositeSprite;
+import backend.composite.CompositeSprite;
 
 class LoginSubState extends FlxSubState {
     private var windowComposite:CompositeSprite;

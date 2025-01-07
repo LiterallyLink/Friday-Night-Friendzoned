@@ -1,8 +1,6 @@
 package backend;
 
-import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
-import flixel.input.mouse.FlxMouseEvent;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.text.FlxText;
@@ -10,7 +8,9 @@ import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
-import flixel.util.FlxDestroyUtil;
+
+import flixel.input.mouse.FlxMouseEvent;
+import backend.drag.AppManager;
 
 class ApplicationButton extends FlxSpriteGroup
 {
@@ -19,10 +19,11 @@ class ApplicationButton extends FlxSpriteGroup
 
     private var _button:FlxButton;
     private var _label:FlxText;
-    private var _bounds:FlxRect;
+    public var _bounds:FlxRect;
     
     public var _onSingleClick:Void->Void;
     public var _onDoubleClick:Void->Void;
+    public var _onRightClick:Void->Void;
 
     private var _startPosition:FlxPoint;
     private var _lastValidPosition:FlxPoint;
@@ -33,7 +34,7 @@ class ApplicationButton extends FlxSpriteGroup
     final _scaleTweenDuration:Float = 0.2;
     final _boundsSnapDuration:Float = 0.3;
 
-    public function new(X:Float = 0, Y:Float = 0, ?ImagePath:String, ?LabelText:String, ?Bounds:FlxRect, ?OnSingleClick:Void->Void, ?OnDoubleClick:Void->Void)
+    public function new(X:Float = 0, Y:Float = 0,  ?Bounds:FlxRect, ?ImagePath:String, ?LabelText:String, ?OnSingleClick:Void->Void, ?OnDoubleClick:Void->Void, ?OnRightClick:Void->Void)
     {
         super(X, Y);
 
@@ -43,13 +44,18 @@ class ApplicationButton extends FlxSpriteGroup
         _bounds = Bounds;
         _onSingleClick = OnSingleClick;
         _onDoubleClick = OnDoubleClick;
+        _onRightClick = OnRightClick;
 
         addButton(ImagePath);
 
         if (LabelText != null)
             addLabel(LabelText);
 
-        DragManager.i().setButton(this);
+        AppManager.i().registerButton(this);
+    }
+
+    override function update(elapsed:Float) {
+        super.update(elapsed);
     }
 
     private function addButton(?ImagePath:String):Void
@@ -66,8 +72,8 @@ class ApplicationButton extends FlxSpriteGroup
         _label = new FlxText(0, 0, 0, LabelText, DEFAULT_FONT_SIZE);
         _label.setFormat(null, DEFAULT_FONT_SIZE, FlxColor.WHITE, "center", FlxTextBorderStyle.SHADOW, FlxColor.BLACK);
         _label.setBorderStyle(FlxTextBorderStyle.SHADOW, FlxColor.BLACK, 2, 2);
-
         add(_label);
+        
         updateLabelPosition();
     }
 
@@ -84,27 +90,6 @@ class ApplicationButton extends FlxSpriteGroup
         updateLabelPosition();
     }
 
-    public function updatePosition(newX:Float, newY:Float):Void
-    {
-        if (isWithinBounds())
-        {
-            _lastValidPosition.set(x, y);
-        }
-
-        x = newX;
-        y = newY;
-
-        if (!isWithinBounds())
-        {
-            resetPosition();
-        }
-    }
-
-    public function resetPosition():Void
-    {
-        tweenToPosition(_lastValidPosition.x, _lastValidPosition.y);
-    }
-
     private function updateLabelPosition():Void
     {
         if (_label != null)
@@ -112,17 +97,6 @@ class ApplicationButton extends FlxSpriteGroup
             _label.x = _button.x + (_button.width - _label.width) / 2;
             _label.y = _button.y + _button.height + DEFAULT_LABEL_PADDING;
         }
-    }
-
-    private function isWithinBounds():Bool
-    {
-        if (_bounds == null) 
-            return true;
-            
-        return (x >= _bounds.x && 
-                y >= _bounds.y && 
-                x + width <= _bounds.right && 
-                y + height <= _bounds.bottom);
     }
     
     /*
@@ -151,25 +125,6 @@ class ApplicationButton extends FlxSpriteGroup
         );
     }
 
-    public function tweenToPosition(targetX:Float, targetY:Float):Void
-    {
-        if (boundsTween != null && boundsTween.active)
-        {
-            boundsTween.cancel();
-        }
-
-        boundsTween = FlxTween.tween(this, 
-            { x: targetX, y: targetY }, 
-            _boundsSnapDuration, 
-            {
-                ease: FlxEase.elasticOut,
-                onUpdate: (tween:FlxTween) -> {
-                    updateLabelPosition();
-                }
-            }
-        );
-    }
-
     /*
     ================
      EVENT HANDLERS
@@ -178,6 +133,10 @@ class ApplicationButton extends FlxSpriteGroup
 
     public function setOnSingleClick(callback:Void->Void):Void {
         _onSingleClick = callback;
+    }
+
+    public function setOnRightClick(callback:Void->Void):Void {
+        _onRightClick = callback;
     }
 
     public function setOnDoubleClick(callback:Void->Void):Void {

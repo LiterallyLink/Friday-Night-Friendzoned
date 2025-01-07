@@ -3,10 +3,11 @@ package states;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.ui.FlxButton;
+import flixel.text.FlxText;
 import flixel.group.FlxGroup;
 import flixel.math.FlxPoint;
-import flixel.text.FlxText;
 
+import backend.CoolUtil;
 import backend.ShaderManager;
 import backend.Achievements;
 
@@ -18,15 +19,18 @@ import flixel.group.FlxSpriteContainer;
 import flixel.addons.transition.FlxTransitionableState;
 
 class LoginState extends MusicBeatState {
-    private var loginTheme:String = 'xmas';
+    private var loginTheme:String = 'stage';
+
     private var iconContainer:FlxSpriteContainer;
-    private var cloudContainer:FlxSpriteContainer;
+    private var foregroundContainer:FlxSpriteContainer;
+
     private var floatUp:Bool = true;
 
     override public function new() {
         super();
+
         iconContainer = new FlxSpriteContainer();
-        cloudContainer = new FlxSpriteContainer();
+        foregroundContainer = new FlxSpriteContainer();
     }
 
     override function create() {
@@ -42,34 +46,54 @@ class LoginState extends MusicBeatState {
         FlxG.mouse.load(cursor.pixels);
 
         createBackground();
-        ShaderManager.i().applyShaders();
-        createForegroundClouds();
         createPowerButton();
         createUsers();
-        
-        var divider = new FlxSprite();
-        divider.loadGraphic(Paths.image('menulogin/divider'));
-        divider.screenCenter(XY);
-        add(divider);
 
         startLoginMusic();
+        ShaderManager.i().applyShaders();
     }
 
     private function createBackground() {
         var bg = new FlxSprite();
         bg.loadGraphic(Paths.image('menulogin/${loginTheme}/bg'));
         add(bg);
-    
+
         var borders = new FlxSprite();
         borders.loadGraphic(Paths.image('menulogin/${loginTheme}/borders'));
         add(borders);
-    
-        var bgClouds = new FlxBackdrop(Paths.image('menulogin/${loginTheme}/bg_clouds'));
-        bgClouds.velocity.set(20, 0);
-        add(bgClouds);
+
+        ['spooky', 'city', 'spraypaint'].contains(loginTheme) ? createForegroundStars() : createForegroundClouds();
+
+        var divider = new FlxSprite();
+        divider.loadGraphic(Paths.image('menulogin/divider'));
+        add(divider);
+
+        var welcome = new FlxSprite();
+        welcome.loadGraphic(Paths.image('menulogin/${loginTheme}/welcome'));
+        add(welcome);
+
+        var welcomePrompt = new FlxSprite();
+        welcomePrompt.loadGraphic(Paths.image('menulogin/${loginTheme}/welcome_prompt'));
+        add(welcomePrompt);
+        
+        CoolUtil.flashingEffect(welcomePrompt, 2.0, 2.0);
+    }
+
+    private function createForegroundStars() {
+        var bgStars = new FlxBackdrop(Paths.image('menulogin/${loginTheme}/bg_stars'));
+        bgStars.velocity.set(10, 0);
+
+        var foregroundStars = new FlxSprite(Paths.image('menulogin/${loginTheme}/foreground_stars'));
+        // foregroundStars.velocity.set(8, 0);
+ 
+        add(bgStars);
+        add(foregroundStars);
     }
 
     private function createForegroundClouds() {
+        var bgClouds = new FlxBackdrop(Paths.image('menulogin/${loginTheme}/bg_clouds'));
+        bgClouds.velocity.set(20, 0);
+        
         var positions:Array<{x:Int, y:Int}> = [
             {x: 248, y: 170},
             {x: 548, y: 185},
@@ -80,10 +104,11 @@ class LoginState extends MusicBeatState {
             var pos = positions[i];
             var foregroundCloud:FlxSprite = new FlxSprite(pos.x, pos.y);
             foregroundCloud.loadGraphic(Paths.image('menulogin/${loginTheme}/foreground_cloud_${i + 1}'));
-            cloudContainer.add(foregroundCloud);
+            foregroundContainer.add(foregroundCloud);
         }
 
-        add(cloudContainer);
+        add(bgClouds);
+        add(foregroundContainer);
     }
 
     private function createUsers() {
@@ -176,11 +201,11 @@ class LoginState extends MusicBeatState {
     }
 
     private function bumpClouds() {
-        var directions:Array<Int> = [for (i in 0...cloudContainer.length) FlxG.random.int(0, 2)];
+        var directions:Array<Int> = [for (i in 0...foregroundContainer.length) FlxG.random.int(0, 2)];
         var CLOUD_SPEED:Float = 1.0;
 
-        for (i in 0...cloudContainer.length) {
-            var cloud = cloudContainer.members[i];
+        for (i in 0...foregroundContainer.length) {
+            var cloud = foregroundContainer.members[i];
 
             if (!cloud.isOnScreen()) {
                 cloud.x = -cloud.width;
@@ -252,9 +277,9 @@ class LoginState extends MusicBeatState {
             iconContainer.destroy();
             iconContainer = null;
         }
-        if (cloudContainer != null) {
-            cloudContainer.destroy();
-            cloudContainer = null;
+        if (foregroundContainer != null) {
+            foregroundContainer.destroy();
+            foregroundContainer = null;
         }
         super.destroy();
     }

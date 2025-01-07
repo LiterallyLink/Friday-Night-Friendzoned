@@ -7,16 +7,17 @@ import flixel.util.FlxSpriteUtil;
 import flixel.group.FlxSpriteGroup;
 
 import substates.StartMenuSubState;
-import substates.MinecraftLauncherSubState;
+import substates.ContextMenuSubState;
+import substates.minecraft.MinecraftLauncherSubState;
 import substates.paint.PaintSubState;
 import substates.lethal.LethalPauseSubState;
 
 import backend.ShaderManager;
 import backend.ApplicationButton;
-import backend.DragManager;
+import backend.drag.AppManager;
 
 import backend.window.WindowManager;
-import backend.window.composite.CompositeSprite;
+import backend.composite.CompositeSprite;
 import flixel.addons.transition.FlxTransitionableState;
 
 import flixel.util.FlxTimer;
@@ -24,12 +25,15 @@ import flixel.util.FlxColor;
 
 class DesktopState extends MusicBeatState
 {
-	private var dragManager:DragManager;
+	private var appManager:AppManager;
 
 	private static inline var X_TASKBAR_PADDING:Int = 5;
 	private static inline var Y__TASKBAR_PADDING:Int = 10;
 
 	public var taskbar:FlxSprite;
+
+	private var appCredits:ApplicationButton;
+	private var appMinecraft:ApplicationButton;
 
 	private var digitSprites:Array<FlxSprite>;
 	private var ampmSprite:FlxSprite;
@@ -40,29 +44,56 @@ class DesktopState extends MusicBeatState
 	override function create()
 	{
 		ShaderManager.i().applyShaders();
-		dragManager = DragManager.i();
+		appManager = AppManager.i();
 
-		addMusic();
+		playDesktopMusic();
 		setDesktopBg();
 		setupTaskBar();
-		testWindowManager();
-	}
+		
+		var bounds = new FlxRect(0, 0, FlxG.width, FlxG.height - taskbar.height);
 
-	private function addMusic()
-	{
-		FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
-		FlxG.sound.play(Paths.sound('humming'), true);
+		appMinecraft = new ApplicationButton(0, 100, bounds, 'menudesktop/applications/mc', 'Minecraft',
+		() -> {
+			trace('single click');
+		},
+		() -> {
+			openSubState(new MinecraftLauncherSubState());
+		},
+		() -> {
+			openSubState(new ContextMenuSubState(appMinecraft));
+		});
+
+		appCredits = new ApplicationButton(0, 0, bounds, 'menudesktop/applications/sticky_note', 'Credits.txt',
+		() -> {
+			trace('single click');
+		},
+		() -> {
+			trace('double click');
+		},
+		() -> {
+			openSubState(new ContextMenuSubState(appCredits));
+		});
+		
+		add(appMinecraft);
+		add(appCredits);
 	}
 
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
-		DragManager.i().update();
+
+		AppManager.i().update();
 
 		if (FlxG.sound.music != null)
 		{
 			Conductor.songPosition = FlxG.sound.music.time;
 		}
+	}
+
+	private function playDesktopMusic()
+	{
+		FlxG.sound.playMusic(Paths.music('desktopTheme'), 0.5, true);
+		FlxG.sound.play(Paths.sound('humming'), true);
 	}
 
 	private function setDesktopBg()
@@ -208,33 +239,5 @@ class DesktopState extends MusicBeatState
 	override function destroy()
 	{
 		super.destroy();
-	}
-
-	private function testWindowManager():Void {
-		var composite = new CompositeSprite();
-		var backdrop = new FlxSprite();
-		var width = FlxG.random.int(200, 400);
-		var height = FlxG.random.int(200, 400);
-
-		backdrop.makeGraphic(width, height, FlxColor.WHITE);
-		composite.add(backdrop);    
-		composite.updateHitbox();
-				
-		var window = new WindowManager(composite);
-		
-		var randomX = FlxG.random.float(0, FlxG.width - width);
-		var randomY = FlxG.random.float(0, FlxG.height - height);
-				
-		window.setPosition(randomX, randomY);
-		add(window);
-				
-		/*
-		new FlxTimer().start(2, (_) -> {
-			trace('Destroying window at position: ${window.x},${window.y}');
-			remove(window);
-			window.destroy();
-			testWindowManager();
-		});
-		*/
 	}
 }

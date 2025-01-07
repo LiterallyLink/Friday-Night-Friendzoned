@@ -23,7 +23,7 @@ class TestState extends MusicBeatState
         debugText.text = "Loading music...";
         
         // Let's try loading without the callback first and handle in update
-        music = FlxG.sound.load(Paths.music('Voices'));
+        music = FlxG.sound.load(Paths.music('fresh'));
         initializeSpectrums(); // Initialize right away
     }
     
@@ -31,12 +31,12 @@ class TestState extends MusicBeatState
         debugText.text = "Initializing spectrums...";
     
         var padding:Float = 10;
-        var bassAmplitude:Float = 0.2;
-        var subBassAmplitude:Float = 0.2;
-        var midAmplitude:Float = 1;
-        var highMidAmplitude:Float = 1.3;
-        var presenceAmplitude:Float = 1.3;
-        var brillianceAmplitude:Float = 2;
+        var bassAmplitude:Float = 0.8;
+        var subBassAmplitude:Float = 1;
+        var midAmplitude:Float = 1.1;
+        var highMidAmplitude:Float = 1.1;
+        var presenceAmplitude:Float = 1;
+        var brillianceAmplitude:Float = 1;
     
         leftSpectrum = new AudioSpectrum(music, padding, padding, true, false,
             subBassAmplitude, bassAmplitude, midAmplitude, highMidAmplitude, 
@@ -58,10 +58,10 @@ class TestState extends MusicBeatState
         if (music != null && leftSpectrum != null && rightSpectrum != null) 
         {
             // Get the enhanced debug info
-            //debugText.text = AudioSpectrumDebug.getSpectrumInfo(music, [leftSpectrum, rightSpectrum]);
+            debugText.text = AudioSpectrumDebug.getSpectrumInfo(music, [leftSpectrum, rightSpectrum]);
             
             // Check and reset buffers if needed
-            //AudioSpectrumDebug.checkAndResetSpectrumBuffers([leftSpectrum, rightSpectrum]);
+            AudioSpectrumDebug.checkAndResetSpectrumBuffers([leftSpectrum, rightSpectrum]);
             
             if (FlxG.keys.justPressed.SPACE) {
                 if (music.playing) music.pause();
